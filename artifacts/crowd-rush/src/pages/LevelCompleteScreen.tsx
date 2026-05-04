@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { LEVELS } from '../game/levels';
+import { getLevelMeta } from '../game/levels';
 
 interface Props {
   level: number;
@@ -7,12 +7,13 @@ interface Props {
   score: number;
   onNext: () => void;
   onHome: () => void;
-  isLastLevel: boolean;
 }
 
-export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome, isLastLevel }: Props) {
+export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef(0);
+  const nextMeta = getLevelMeta(level + 1);
+  const isTwistNext = nextMeta.twist !== 'none';
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,17 +21,18 @@ export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome, i
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const confetti: { x: number; y: number; vx: number; vy: number; color: string; size: number; rot: number; rotV: number }[] = [];
-    const COLORS = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFD700','#DDA0DD','#76FF03','#FF3D00'];
+    const confetti: { x: number; y: number; vx: number; vy: number; color: string; w: number; h: number; rot: number; rotV: number }[] = [];
+    const COLS = ['#2196F3','#42A5F5','#76FF03','#FFD700','#FF6B6B','#4ECDC4','#90CAF9','#A5D6A7'];
 
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 70; i++) {
       confetti.push({
         x: Math.random() * canvas.width,
         y: -20 - Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 2,
-        vy: 1.5 + Math.random() * 2.5,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        size: 6 + Math.random() * 8,
+        vx: (Math.random() - 0.5) * 2.5,
+        vy: 1.8 + Math.random() * 2.5,
+        color: COLS[Math.floor(Math.random() * COLS.length)],
+        w: 7 + Math.random() * 8,
+        h: 3 + Math.random() * 4,
         rot: Math.random() * Math.PI * 2,
         rotV: (Math.random() - 0.5) * 0.15,
       });
@@ -38,34 +40,29 @@ export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome, i
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bg.addColorStop(0, '#0a1a00');
-      bg.addColorStop(1, '#001a0a');
+      bg.addColorStop(0, '#030d1a');
+      bg.addColorStop(1, '#050a00');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       for (const c of confetti) {
-        c.x += c.vx;
-        c.y += c.vy;
-        c.rot += c.rotV;
+        c.x += c.vx; c.y += c.vy; c.rot += c.rotV;
         if (c.y > canvas.height + 20) c.y = -20;
-
         ctx.save();
         ctx.translate(c.x, c.y);
         ctx.rotate(c.rot);
         ctx.fillStyle = c.color;
-        ctx.fillRect(-c.size / 2, -c.size / 4, c.size, c.size / 2);
+        ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
         ctx.restore();
       }
-
       rafRef.current = requestAnimationFrame(draw);
     };
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  const stars = crowdSize >= 50 ? 3 : crowdSize >= 25 ? 2 : 1;
+  const stars = crowdSize >= 60 ? 3 : crowdSize >= 30 ? 2 : 1;
 
   return (
     <div style={{
@@ -81,8 +78,8 @@ export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome, i
     }}>
       <canvas
         ref={canvasRef}
-        width={400}
-        height={700}
+        width={480}
+        height={800}
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
 
@@ -93,117 +90,127 @@ export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome, i
         flexDirection: 'column',
         alignItems: 'center',
         gap: 0,
-        paddingBottom: 60,
+        paddingBottom: 70,
+        animation: 'slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
       }}>
         {/* Trophy */}
         <div style={{
           fontSize: 72,
-          marginBottom: 8,
-          filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.8))',
-          animation: 'bounceIn 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)',
+          marginBottom: 6,
+          filter: 'drop-shadow(0 0 24px rgba(255,215,0,0.8))',
+          animation: 'iconBounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}>
           🏆
         </div>
 
-        {/* Level complete text */}
         <div style={{
-          fontSize: 13,
-          letterSpacing: '0.2em',
+          fontSize: 11,
+          letterSpacing: '0.22em',
           textTransform: 'uppercase',
           color: '#76FF03',
-          marginBottom: 4,
           fontWeight: 700,
+          marginBottom: 4,
         }}>
           Level {level} Complete!
         </div>
 
         <div style={{
-          fontSize: 36,
+          fontSize: 34,
           fontWeight: 900,
           letterSpacing: '-0.02em',
           background: 'linear-gradient(135deg, #FFD700, #FF9800)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          marginBottom: 20,
+          marginBottom: 18,
         }}>
-          {isLastLevel ? 'YOU WIN! 🎉' : 'SMASHED IT!'}
+          DOOR SMASHED!
         </div>
 
         {/* Stars */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, fontSize: 36 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
           {[1, 2, 3].map((s) => (
             <span key={s} style={{
-              filter: s <= stars ? 'drop-shadow(0 0 8px rgba(255,215,0,0.8))' : 'none',
-              opacity: s <= stars ? 1 : 0.2,
-              animation: s <= stars ? `starPop ${0.3 + s * 0.15}s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards` : 'none',
+              fontSize: 34,
+              filter: s <= stars ? 'drop-shadow(0 0 10px rgba(255,215,0,0.9))' : 'none',
+              opacity: s <= stars ? 1 : 0.18,
+              animation: s <= stars ? `starPop ${0.3 + s * 0.15}s cubic-bezier(0.34, 1.56, 0.64, 1) both` : 'none',
               display: 'inline-block',
-            }}>
-              ⭐
-            </span>
+            }}>⭐</span>
           ))}
         </div>
 
         {/* Stats */}
-        <div style={{
-          display: 'flex',
-          gap: 12,
-          marginBottom: 32,
-        }}>
-          <StatCard label="Crowd Size" value={crowdSize} color="#76FF03" icon="👥" />
-          <StatCard label="Score" value={score} color="#FFD700" icon="💎" />
+        <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
+          {[
+            { icon: '👥', value: crowdSize, label: 'Crowd', color: '#42A5F5' },
+            { icon: '💎', value: score, label: 'Score', color: '#FFD700' },
+            { icon: '🎮', value: level, label: 'Level', color: '#76FF03' },
+          ].map((s) => (
+            <div key={s.label} style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 14,
+              padding: '10px 14px',
+              textAlign: 'center',
+              minWidth: 78,
+            }}>
+              <div style={{ fontSize: 20, marginBottom: 2 }}>{s.icon}</div>
+              <div style={{ color: s.color, fontSize: 20, fontWeight: 900 }}>{s.value}</div>
+              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Buttons */}
-        {!isLastLevel ? (
-          <button
-            onClick={onNext}
-            style={{
-              padding: '18px 64px',
-              borderRadius: 50,
-              border: 'none',
-              background: 'linear-gradient(90deg, #76FF03, #00E676)',
-              color: '#0a1a00',
-              fontSize: 20,
-              fontWeight: 900,
-              cursor: 'pointer',
-              boxShadow: '0 8px 40px rgba(118, 255, 3, 0.55)',
-              marginBottom: 16,
-              letterSpacing: '0.04em',
-            }}
-          >
-            NEXT LEVEL →
-          </button>
-        ) : (
-          <button
-            onClick={onHome}
-            style={{
-              padding: '18px 64px',
-              borderRadius: 50,
-              border: 'none',
-              background: 'linear-gradient(90deg, #FFD700, #FF9800)',
-              color: '#1a0a00',
-              fontSize: 20,
-              fontWeight: 900,
-              cursor: 'pointer',
-              boxShadow: '0 8px 40px rgba(255, 215, 0, 0.55)',
-              marginBottom: 16,
-              letterSpacing: '0.04em',
-            }}
-          >
-            PLAY AGAIN 🏆
-          </button>
+        {/* Next level teaser */}
+        {isTwistNext && (
+          <div style={{
+            marginBottom: 18,
+            background: `${nextMeta.twistColor}18`,
+            border: `1px solid ${nextMeta.twistColor}44`,
+            borderRadius: 12,
+            padding: '8px 20px',
+            textAlign: 'center',
+          }}>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Next Level
+            </div>
+            <div style={{ color: nextMeta.twistColor, fontSize: 14, fontWeight: 900 }}>
+              {nextMeta.twistEmoji} {nextMeta.twistLabel}
+            </div>
+          </div>
         )}
+
+        {/* Next button */}
+        <button
+          onClick={onNext}
+          style={{
+            padding: '17px 60px',
+            borderRadius: 100,
+            border: 'none',
+            background: 'linear-gradient(90deg, #2196F3, #1565C0)',
+            color: 'white',
+            fontSize: 19,
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: '0 8px 36px rgba(33,150,243,0.55)',
+            marginBottom: 14,
+            letterSpacing: '0.05em',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          NEXT LEVEL →
+        </button>
 
         <button
           onClick={onHome}
           style={{
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            color: 'rgba(255,255,255,0.6)',
-            fontSize: 14,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: 13,
             fontWeight: 600,
-            padding: '12px 40px',
-            borderRadius: 50,
+            padding: '10px 36px',
+            borderRadius: 100,
             cursor: 'pointer',
             fontFamily: 'Inter, sans-serif',
           }}
@@ -211,23 +218,6 @@ export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome, i
           Home
         </button>
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, color, icon }: { label: string; value: number; color: string; icon: string }) {
-  return (
-    <div style={{
-      background: 'rgba(255,255,255,0.06)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 16,
-      padding: '14px 20px',
-      textAlign: 'center',
-      minWidth: 100,
-    }}>
-      <div style={{ fontSize: 24, marginBottom: 4 }}>{icon}</div>
-      <div style={{ color, fontSize: 24, fontWeight: 900 }}>{value}</div>
-      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
     </div>
   );
 }

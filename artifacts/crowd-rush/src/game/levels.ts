@@ -1,309 +1,273 @@
-import type { LevelDef } from './types';
+import type { LevelDef, Gate, Obstacle, Coin } from './types';
 
 const clamp = (n: number) => Math.max(1, Math.round(n));
 
-export const LEVELS: LevelDef[] = [
-  {
-    id: 1,
-    label: 'STREET RUN',
-    startCrowd: 10,
-    speed: 2.8,
-    length: 4000,
-    requiredCrowd: 15,
-    gates: [
-      {
-        worldY: 800,
-        leftLabel: '+8', rightLabel: '+5',
-        leftColor: '#00C853', rightColor: '#00BFA5',
-        leftOp: (n) => clamp(n + 8), rightOp: (n) => clamp(n + 5),
-      },
-      {
-        worldY: 1600,
-        leftLabel: 'x2', rightLabel: '+10',
-        leftColor: '#FF6D00', rightColor: '#00C853',
-        leftOp: (n) => clamp(n * 2), rightOp: (n) => clamp(n + 10),
-      },
-      {
-        worldY: 2400,
-        leftLabel: '+12', rightLabel: '-3',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 12), rightOp: (n) => clamp(n - 3),
-      },
-    ],
-    obstacles: [
-      { worldY: 1200, x: 0.25, width: 60, height: 30 },
-      { worldY: 2000, x: 0.65, width: 60, height: 30 },
-    ],
-    coins: [
-      { worldY: 600, x: 0.5 },
-      { worldY: 1000, x: 0.35 },
-      { worldY: 1800, x: 0.6 },
-      { worldY: 2200, x: 0.45 },
-    ],
-  },
-  {
-    id: 2,
-    label: 'CITY DASH',
-    startCrowd: 12,
-    speed: 3.1,
-    length: 5000,
-    requiredCrowd: 25,
-    gates: [
-      {
-        worldY: 700,
-        leftLabel: '+10', rightLabel: '-5',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 10), rightOp: (n) => clamp(n - 5),
-      },
-      {
-        worldY: 1500,
-        leftLabel: 'x2', rightLabel: 'x3',
-        leftColor: '#FF6D00', rightColor: '#AA00FF',
-        leftOp: (n) => clamp(n * 2), rightOp: (n) => clamp(n * 3),
-      },
-      {
-        worldY: 2300,
-        leftLabel: '-8', rightLabel: '+15',
-        leftColor: '#D50000', rightColor: '#00C853',
-        leftOp: (n) => clamp(n - 8), rightOp: (n) => clamp(n + 15),
-      },
-      {
-        worldY: 3200,
-        leftLabel: 'x2', rightLabel: '-10',
-        leftColor: '#FF6D00', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 2), rightOp: (n) => clamp(n - 10),
-      },
-      {
-        worldY: 4000,
-        leftLabel: '+20', rightLabel: '/2',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 20), rightOp: (n) => clamp(Math.floor(n / 2)),
-      },
-    ],
-    obstacles: [
-      { worldY: 1100, x: 0.2, width: 70, height: 35 },
-      { worldY: 1900, x: 0.7, width: 70, height: 35 },
-      { worldY: 2700, x: 0.4, width: 70, height: 35 },
-      { worldY: 3600, x: 0.55, width: 70, height: 35 },
-    ],
-    coins: [
-      { worldY: 500, x: 0.5 },
-      { worldY: 900, x: 0.3 },
-      { worldY: 1300, x: 0.65 },
-      { worldY: 2100, x: 0.4 },
-      { worldY: 2800, x: 0.55 },
-      { worldY: 3500, x: 0.35 },
-    ],
-  },
-  {
-    id: 3,
-    label: 'HIGHWAY RUSH',
-    startCrowd: 15,
-    speed: 3.4,
-    length: 5500,
-    requiredCrowd: 30,
-    gates: [
-      {
-        worldY: 600,
-        leftLabel: 'x3', rightLabel: '-6',
-        leftColor: '#AA00FF', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 3), rightOp: (n) => clamp(n - 6),
-      },
-      {
-        worldY: 1400,
-        leftLabel: '+18', rightLabel: '/2',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 18), rightOp: (n) => clamp(Math.floor(n / 2)),
-      },
-      {
-        worldY: 2200,
-        leftLabel: '-12', rightLabel: 'x2',
-        leftColor: '#D50000', rightColor: '#FF6D00',
-        leftOp: (n) => clamp(n - 12), rightOp: (n) => clamp(n * 2),
-      },
-      {
-        worldY: 3000,
-        leftLabel: '+25', rightLabel: '-15',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 25), rightOp: (n) => clamp(n - 15),
-      },
-      {
-        worldY: 3900,
-        leftLabel: 'x2', rightLabel: '+10',
-        leftColor: '#FF6D00', rightColor: '#00C853',
-        leftOp: (n) => clamp(n * 2), rightOp: (n) => clamp(n + 10),
-      },
-      {
-        worldY: 4600,
-        leftLabel: '+30', rightLabel: '/3',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 30), rightOp: (n) => clamp(Math.floor(n / 3)),
-      },
-    ],
-    obstacles: [
-      { worldY: 1000, x: 0.2, width: 65, height: 32 },
-      { worldY: 1800, x: 0.7, width: 65, height: 32 },
-      { worldY: 2600, x: 0.35, width: 65, height: 32 },
-      { worldY: 3400, x: 0.6, width: 65, height: 32 },
-      { worldY: 4200, x: 0.25, width: 65, height: 32 },
-    ],
-    coins: [
-      { worldY: 400, x: 0.5 },
-      { worldY: 800, x: 0.3 },
-      { worldY: 1200, x: 0.65 },
-      { worldY: 2000, x: 0.4 },
-      { worldY: 2800, x: 0.55 },
-      { worldY: 3600, x: 0.3 },
-      { worldY: 4400, x: 0.6 },
-    ],
-  },
-  {
-    id: 4,
-    label: 'METRO FRENZY',
-    startCrowd: 18,
-    speed: 3.7,
-    length: 6000,
-    requiredCrowd: 40,
-    gates: [
-      {
-        worldY: 600,
-        leftLabel: 'x3', rightLabel: '-10',
-        leftColor: '#AA00FF', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 3), rightOp: (n) => clamp(n - 10),
-      },
-      {
-        worldY: 1300,
-        leftLabel: '+20', rightLabel: '/2',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 20), rightOp: (n) => clamp(Math.floor(n / 2)),
-      },
-      {
-        worldY: 2000,
-        leftLabel: 'x2', rightLabel: '-20',
-        leftColor: '#FF6D00', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 2), rightOp: (n) => clamp(n - 20),
-      },
-      {
-        worldY: 2800,
-        leftLabel: '-5', rightLabel: 'x3',
-        leftColor: '#D50000', rightColor: '#AA00FF',
-        leftOp: (n) => clamp(n - 5), rightOp: (n) => clamp(n * 3),
-      },
-      {
-        worldY: 3600,
-        leftLabel: '+35', rightLabel: '/3',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 35), rightOp: (n) => clamp(Math.floor(n / 3)),
-      },
-      {
-        worldY: 4400,
-        leftLabel: 'x2', rightLabel: '-25',
-        leftColor: '#FF6D00', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 2), rightOp: (n) => clamp(n - 25),
-      },
-      {
-        worldY: 5200,
-        leftLabel: '+40', rightLabel: 'x2',
-        leftColor: '#00C853', rightColor: '#FF6D00',
-        leftOp: (n) => clamp(n + 40), rightOp: (n) => clamp(n * 2),
-      },
-    ],
-    obstacles: [
-      { worldY: 900, x: 0.2, width: 70, height: 35 },
-      { worldY: 1600, x: 0.7, width: 70, height: 35 },
-      { worldY: 2400, x: 0.4, width: 70, height: 35 },
-      { worldY: 3200, x: 0.6, width: 70, height: 35 },
-      { worldY: 4000, x: 0.25, width: 70, height: 35 },
-      { worldY: 4800, x: 0.65, width: 70, height: 35 },
-    ],
-    coins: [
-      { worldY: 400, x: 0.5 },
-      { worldY: 700, x: 0.3 },
-      { worldY: 1100, x: 0.65 },
-      { worldY: 1800, x: 0.4 },
-      { worldY: 2600, x: 0.5 },
-      { worldY: 3400, x: 0.3 },
-      { worldY: 4200, x: 0.6 },
-      { worldY: 4900, x: 0.45 },
-    ],
-  },
-  {
-    id: 5,
-    label: 'GRAND RUSH',
-    startCrowd: 20,
-    speed: 4.0,
-    length: 7000,
-    requiredCrowd: 55,
-    gates: [
-      {
-        worldY: 500,
-        leftLabel: 'x3', rightLabel: '-15',
-        leftColor: '#AA00FF', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 3), rightOp: (n) => clamp(n - 15),
-      },
-      {
-        worldY: 1200,
-        leftLabel: '+30', rightLabel: '/2',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 30), rightOp: (n) => clamp(Math.floor(n / 2)),
-      },
-      {
-        worldY: 2000,
-        leftLabel: 'x2', rightLabel: '+15',
-        leftColor: '#FF6D00', rightColor: '#00C853',
-        leftOp: (n) => clamp(n * 2), rightOp: (n) => clamp(n + 15),
-      },
-      {
-        worldY: 2900,
-        leftLabel: '-30', rightLabel: 'x4',
-        leftColor: '#D50000', rightColor: '#FFD700',
-        leftOp: (n) => clamp(n - 30), rightOp: (n) => clamp(n * 4),
-      },
-      {
-        worldY: 3800,
-        leftLabel: '+50', rightLabel: '/3',
-        leftColor: '#00C853', rightColor: '#D50000',
-        leftOp: (n) => clamp(n + 50), rightOp: (n) => clamp(Math.floor(n / 3)),
-      },
-      {
-        worldY: 4600,
-        leftLabel: 'x3', rightLabel: '-40',
-        leftColor: '#AA00FF', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 3), rightOp: (n) => clamp(n - 40),
-      },
-      {
-        worldY: 5400,
-        leftLabel: '+60', rightLabel: 'x2',
-        leftColor: '#00C853', rightColor: '#FF6D00',
-        leftOp: (n) => clamp(n + 60), rightOp: (n) => clamp(n * 2),
-      },
-      {
-        worldY: 6200,
-        leftLabel: 'x5', rightLabel: '-50',
-        leftColor: '#FFD700', rightColor: '#D50000',
-        leftOp: (n) => clamp(n * 5), rightOp: (n) => clamp(n - 50),
-      },
-    ],
-    obstacles: [
-      { worldY: 800, x: 0.2, width: 75, height: 38 },
-      { worldY: 1600, x: 0.7, width: 75, height: 38 },
-      { worldY: 2500, x: 0.35, width: 75, height: 38 },
-      { worldY: 3300, x: 0.6, width: 75, height: 38 },
-      { worldY: 4100, x: 0.25, width: 75, height: 38 },
-      { worldY: 4900, x: 0.7, width: 75, height: 38 },
-      { worldY: 5700, x: 0.4, width: 75, height: 38 },
-    ],
-    coins: [
-      { worldY: 300, x: 0.5 },
-      { worldY: 600, x: 0.3 },
-      { worldY: 1000, x: 0.65 },
-      { worldY: 1400, x: 0.4 },
-      { worldY: 2200, x: 0.5 },
-      { worldY: 3000, x: 0.3 },
-      { worldY: 3700, x: 0.6 },
-      { worldY: 4400, x: 0.45 },
-      { worldY: 5200, x: 0.3 },
-      { worldY: 6000, x: 0.65 },
-    ],
-  },
+export type TwistType = 'none' | 'speedRush' | 'megaGates' | 'wallMaze' | 'bonusRain' | 'darkRun' | 'reversedColors' | 'doubleDoor' | 'blitz' | 'jackpot';
+
+export interface LevelMeta {
+  twist: TwistType;
+  twistLabel: string;
+  twistEmoji: string;
+  twistColor: string;
+}
+
+const TWISTS: { type: TwistType; label: string; emoji: string; color: string }[] = [
+  { type: 'speedRush',      label: 'SPEED RUSH',    emoji: '⚡', color: '#FF6D00' },
+  { type: 'megaGates',      label: 'MEGA GATES',    emoji: '💥', color: '#AA00FF' },
+  { type: 'wallMaze',       label: 'WALL MAZE',     emoji: '🧱', color: '#D50000' },
+  { type: 'bonusRain',      label: 'BONUS RAIN',    emoji: '💰', color: '#FFD700' },
+  { type: 'darkRun',        label: 'DARK RUN',      emoji: '🌑', color: '#37474F' },
+  { type: 'reversedColors', label: 'TRAP GATES',    emoji: '🔀', color: '#E91E63' },
+  { type: 'doubleDoor',     label: 'DOUBLE DOOR',   emoji: '🚪', color: '#0091EA' },
+  { type: 'blitz',          label: 'BLITZ',         emoji: '🔥', color: '#FF3D00' },
+  { type: 'jackpot',        label: 'JACKPOT',       emoji: '🎰', color: '#00BFA5' },
 ];
+
+export function getLevelMeta(levelNum: number): LevelMeta {
+  const isTwist = levelNum % 10 === 0;
+  if (!isTwist) return { twist: 'none', twistLabel: '', twistEmoji: '', twistColor: '' };
+  const idx = Math.floor(levelNum / 10 - 1) % TWISTS.length;
+  const t = TWISTS[idx];
+  return { twist: t.type, twistLabel: t.label, twistEmoji: t.emoji, twistColor: t.color };
+}
+
+function rng(seed: number, max: number): number {
+  const x = Math.sin(seed * 9301 + 49297) * 233280;
+  return Math.floor((x - Math.floor(x)) * max);
+}
+
+function rngFloat(seed: number): number {
+  const x = Math.sin(seed * 9301 + 49297) * 233280;
+  return x - Math.floor(x);
+}
+
+export function generateLevel(levelNum: number): LevelDef {
+  const n = levelNum;
+  const meta = getLevelMeta(n);
+  const isTwist = meta.twist !== 'none';
+
+  // Progressive difficulty
+  let speed = Math.min(7.5, 3.2 + (n - 1) * 0.09);
+  if (meta.twist === 'speedRush') speed *= 1.6;
+  if (meta.twist === 'blitz') speed *= 1.8;
+
+  const length = Math.min(12000, 3800 + n * 120);
+  const startCrowd = Math.max(5, 14 - Math.floor(n / 5));
+  const requiredCrowd = 12 + Math.floor(n * 2.8);
+
+  const gateCount = Math.min(12, 3 + Math.floor(n / 2.5));
+  let obstacleCount = Math.min(9, Math.floor(n / 2));
+  if (meta.twist === 'wallMaze') obstacleCount = Math.min(14, obstacleCount + 6);
+
+  const label = isTwist
+    ? `${meta.twistEmoji} ${meta.twistLabel}`
+    : `STAGE ${n}`;
+
+  // Gate generation
+  const usableLength = length - 900;
+  const spacing = usableLength / (gateCount + 1);
+
+  const gates: Omit<Gate, 'id' | 'passed' | 'flashTimer'>[] = [];
+
+  for (let i = 0; i < gateCount; i++) {
+    const worldY = 500 + spacing * (i + 1);
+    const seed = n * 100 + i;
+    const diff = rngFloat(seed);
+    const gate = buildGate(n, seed, diff, meta.twist, i, gateCount);
+    gates.push({ ...gate, worldY });
+  }
+
+  // Obstacle generation
+  const obstacles: Omit<Obstacle, 'id' | 'hit' | 'flashTimer'>[] = [];
+  const obsSpacing = usableLength / (obstacleCount + 1);
+
+  const xPositions = meta.twist === 'wallMaze'
+    ? [0.2, 0.5, 0.75, 0.3, 0.6, 0.15, 0.55, 0.8, 0.35, 0.65, 0.25, 0.45, 0.7, 0.85]
+    : [0.22, 0.72, 0.38, 0.62, 0.18, 0.78, 0.45, 0.28, 0.58, 0.82];
+
+  for (let i = 0; i < obstacleCount; i++) {
+    const worldY = 500 + obsSpacing * (i + 1);
+    const gateNear = gates.find((g) => Math.abs(g.worldY - worldY) < 200);
+    if (gateNear) continue;
+
+    const obsW = meta.twist === 'wallMaze' ? 90 + rng(n + i * 7, 40) : 55 + rng(n + i * 7, 50);
+    obstacles.push({
+      worldY,
+      x: xPositions[i % xPositions.length],
+      width: obsW,
+      height: 32,
+    });
+  }
+
+  // Coins
+  const coins: Omit<Coin, 'id' | 'collected' | 'bobPhase'>[] = [];
+  const coinCount = meta.twist === 'bonusRain'
+    ? 16 + Math.floor(n / 3)
+    : Math.min(10, 4 + Math.floor(n / 4));
+
+  const coinSpacing = usableLength / (coinCount + 1);
+  const coinXArr = [0.25, 0.5, 0.75, 0.35, 0.65, 0.45, 0.55, 0.3, 0.7, 0.4, 0.6, 0.2, 0.8, 0.5, 0.33, 0.67];
+  for (let i = 0; i < coinCount; i++) {
+    coins.push({
+      worldY: 400 + coinSpacing * (i + 1),
+      x: coinXArr[i % coinXArr.length],
+    });
+  }
+
+  return {
+    id: n,
+    label,
+    startCrowd,
+    speed,
+    length,
+    gates,
+    obstacles,
+    coins,
+    requiredCrowd,
+  };
+}
+
+function buildGate(
+  level: number,
+  seed: number,
+  diff: number,
+  twist: TwistType,
+  gateIndex: number,
+  gateTotal: number,
+): Omit<Gate, 'id' | 'passed' | 'flashTimer' | 'worldY'> {
+  // How tricky: early gates in level are easier
+  const earlyBias = gateIndex / gateTotal;
+  const hardness = Math.min(1, (level / 40) + earlyBias * 0.3);
+
+  // Choose gate type based on level/hardness
+  const r = rngFloat(seed + 1);
+
+  // Jackpot twist: all big multipliers
+  if (twist === 'jackpot') {
+    const mults = [2, 3, 4, 5, 6];
+    const ml = mults[Math.floor(r * mults.length)];
+    const mr = mults[Math.floor(rngFloat(seed + 2) * mults.length)];
+    return {
+      leftLabel: `x${ml}`, rightLabel: `x${mr}`,
+      leftColor: '#FFD700', rightColor: '#FFD700',
+      leftOp: (n) => clamp(n * ml), rightOp: (n) => clamp(n * mr),
+    };
+  }
+
+  // Reversed/trap gates: colors are misleading
+  if (twist === 'reversedColors') {
+    const addVal = 8 + Math.floor(level / 3);
+    const multVal = 2 + Math.floor(level / 15);
+    const isLeftGood = rngFloat(seed + 3) > 0.5;
+    return {
+      leftLabel: isLeftGood ? `x${multVal}` : `-${addVal}`,
+      rightLabel: isLeftGood ? `-${addVal}` : `x${multVal}`,
+      leftColor: isLeftGood ? '#D50000' : '#00C853', // reversed colors!
+      rightColor: isLeftGood ? '#00C853' : '#D50000',
+      leftOp: isLeftGood ? (n) => clamp(n * multVal) : (n) => clamp(n - addVal),
+      rightOp: isLeftGood ? (n) => clamp(n - addVal) : (n) => clamp(n * multVal),
+    };
+  }
+
+  // Mega gates twist: always big numbers
+  if (twist === 'megaGates') {
+    const bigMult = 3 + gateIndex;
+    const bigSub = Math.floor(level * 1.5);
+    return {
+      leftLabel: `x${bigMult}`,
+      rightLabel: `-${bigSub}`,
+      leftColor: '#AA00FF',
+      rightColor: '#D50000',
+      leftOp: (n) => clamp(n * bigMult),
+      rightOp: (n) => clamp(n - bigSub),
+    };
+  }
+
+  // Normal gate generation
+  const addMax = Math.min(50, 5 + Math.floor(level * 1.2));
+  const multMax = Math.min(6, 2 + Math.floor(level / 10));
+  const subMax = Math.min(40, 3 + Math.floor(level * 0.9));
+
+  const types = hardness < 0.3
+    ? ['add_add', 'add_mult']
+    : hardness < 0.6
+    ? ['add_mult', 'mult_sub', 'add_sub']
+    : ['mult_sub', 'add_sub', 'div_mult', 'mult_mult'];
+
+  const type = types[rng(seed + 5, types.length)];
+
+  switch (type) {
+    case 'add_add': {
+      const l = 4 + rng(seed + 6, addMax);
+      const rm = 3 + rng(seed + 7, addMax);
+      return {
+        leftLabel: `+${l}`, rightLabel: `+${rm}`,
+        leftColor: '#00C853', rightColor: '#00BFA5',
+        leftOp: (n) => clamp(n + l), rightOp: (n) => clamp(n + rm),
+      };
+    }
+    case 'add_mult': {
+      const add = 5 + rng(seed + 6, addMax);
+      const mult = 2 + rng(seed + 7, multMax - 1);
+      const leftIsAdd = rngFloat(seed + 8) > 0.5;
+      return leftIsAdd
+        ? {
+            leftLabel: `+${add}`, rightLabel: `x${mult}`,
+            leftColor: '#00C853', rightColor: '#FF6D00',
+            leftOp: (n) => clamp(n + add), rightOp: (n) => clamp(n * mult),
+          }
+        : {
+            leftLabel: `x${mult}`, rightLabel: `+${add}`,
+            leftColor: '#FF6D00', rightColor: '#00C853',
+            leftOp: (n) => clamp(n * mult), rightOp: (n) => clamp(n + add),
+          };
+    }
+    case 'mult_sub': {
+      const mult = 2 + rng(seed + 6, multMax);
+      const sub = 5 + rng(seed + 7, subMax);
+      return {
+        leftLabel: `x${mult}`, rightLabel: `-${sub}`,
+        leftColor: '#FF6D00', rightColor: '#D50000',
+        leftOp: (n) => clamp(n * mult), rightOp: (n) => clamp(n - sub),
+      };
+    }
+    case 'add_sub': {
+      const add = 6 + rng(seed + 6, addMax);
+      const sub = 4 + rng(seed + 7, subMax);
+      return {
+        leftLabel: `+${add}`, rightLabel: `-${sub}`,
+        leftColor: '#00C853', rightColor: '#D50000',
+        leftOp: (n) => clamp(n + add), rightOp: (n) => clamp(n - sub),
+      };
+    }
+    case 'div_mult': {
+      const div = 2 + rng(seed + 6, 2);
+      const mult = 2 + rng(seed + 7, multMax);
+      return {
+        leftLabel: `/÷${div}`, rightLabel: `x${mult}`,
+        leftColor: '#D50000', rightColor: '#FF6D00',
+        leftOp: (n) => clamp(Math.floor(n / div)), rightOp: (n) => clamp(n * mult),
+      };
+    }
+    case 'mult_mult': {
+      const ml = 2 + rng(seed + 6, multMax);
+      const mr = 2 + rng(seed + 7, multMax);
+      return {
+        leftLabel: `x${ml}`, rightLabel: `x${mr}`,
+        leftColor: '#FF6D00', rightColor: '#AA00FF',
+        leftOp: (n) => clamp(n * ml), rightOp: (n) => clamp(n * mr),
+      };
+    }
+    default: {
+      const add = 5 + rng(seed + 6, addMax);
+      return {
+        leftLabel: `+${add}`, rightLabel: `+${Math.floor(add / 2)}`,
+        leftColor: '#00C853', rightColor: '#00BFA5',
+        leftOp: (n) => clamp(n + add), rightOp: (n) => clamp(n + Math.floor(add / 2)),
+      };
+    }
+  }
+}
+
+// Legacy export for any remaining references
+export const LEVELS = [generateLevel(1)];

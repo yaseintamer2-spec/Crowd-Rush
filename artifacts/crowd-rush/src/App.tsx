@@ -1,26 +1,31 @@
 import { useState, useCallback, useEffect } from 'react';
 import { HomeScreen } from './pages/HomeScreen';
 import { GameScreen } from './pages/GameScreen';
+import { LoadingScreen } from './pages/LoadingScreen';
 import { useGame } from './hooks/useGame';
 import { GAME_CONFIG } from './game/config';
-import { LEVELS } from './game/levels';
 
-type Screen = 'home' | 'game';
+type Screen = 'loading' | 'home' | 'game';
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('home');
+  const [screen, setScreen] = useState<Screen>('loading');
   const [gameDims, setGameDims] = useState({ width: 400, height: 700 });
 
   useEffect(() => {
-    const update = () => {
-      setGameDims({ width: window.innerWidth, height: window.innerHeight });
-    };
+    const update = () => setGameDims({ width: window.innerWidth, height: window.innerHeight });
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const game = useGame(gameDims.width, gameDims.height - GAME_CONFIG.BANNER_HEIGHT);
+  const game = useGame(
+    gameDims.width,
+    gameDims.height - GAME_CONFIG.BANNER_HEIGHT
+  );
+
+  const handleLoadComplete = useCallback(() => {
+    setScreen('home');
+  }, []);
 
   const handlePlay = useCallback(() => {
     game.restart(1);
@@ -36,12 +41,11 @@ export default function App() {
       width: '100vw',
       height: '100dvh',
       overflow: 'hidden',
-      background: '#0a0a1a',
+      background: '#060614',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      {/* Max-width container for desktop */}
       <div style={{
         width: '100%',
         maxWidth: 480,
@@ -49,6 +53,9 @@ export default function App() {
         position: 'relative',
         overflow: 'hidden',
       }}>
+        {screen === 'loading' && (
+          <LoadingScreen onComplete={handleLoadComplete} />
+        )}
         {screen === 'home' && (
           <HomeScreen
             onPlay={handlePlay}
@@ -56,12 +63,8 @@ export default function App() {
             bestCrowd={game.bestCrowd}
           />
         )}
-
         {screen === 'game' && (
-          <GameScreen
-            game={game}
-            onHome={handleHome}
-          />
+          <GameScreen game={game} onHome={handleHome} />
         )}
       </div>
     </div>

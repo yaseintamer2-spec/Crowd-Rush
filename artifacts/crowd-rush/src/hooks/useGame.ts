@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import type { GameState } from '../game/types';
 import { initLevel, updateGame } from '../game/engine';
-import { LEVELS } from '../game/levels';
+import { generateLevel } from '../game/levels';
 
 export interface GameControls {
   state: GameState;
@@ -13,10 +13,8 @@ export interface GameControls {
   bestCrowd: number;
 }
 
-export function useGame(
-  canvasWidth: number,
-  canvasHeight: number
-): GameControls {
+export function useGame(canvasWidth: number, canvasHeight: number): GameControls {
+  // ── all hooks declared unconditionally and in stable order ──
   const [state, setState] = useState<GameState>(() => ({
     phase: 'home',
     level: 1,
@@ -35,24 +33,25 @@ export function useGame(
     showingDoorShake: false,
     showCountChange: null,
   }));
+  const [bestScore, setBestScore] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('cr_best') || '0'); } catch { return 0; }
+  });
+  const [bestCrowd, setBestCrowd] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('cr_crowd') || '0'); } catch { return 0; }
+  });
 
   const stateRef = useRef(state);
   stateRef.current = state;
-
   const inputXRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
-
-  const [bestScore, setBestScore] = useState(() => {
-    try { return parseInt(localStorage.getItem('cr_bestScore') || '0'); } catch { return 0; }
-  });
-  const [bestCrowd, setBestCrowd] = useState(() => {
-    try { return parseInt(localStorage.getItem('cr_bestCrowd') || '0'); } catch { return 0; }
-  });
+  const bestScoreRef = useRef(bestScore);
+  bestScoreRef.current = bestScore;
+  const bestCrowdRef = useRef(bestCrowd);
+  bestCrowdRef.current = bestCrowd;
 
   const restart = useCallback((level: number) => {
-    const levelIndex = Math.max(0, Math.min(level - 1, LEVELS.length - 1));
-    setState(initLevel(levelIndex));
+    setState(initLevel(Math.max(1, level)));
     inputXRef.current = null;
   }, []);
 
@@ -62,46 +61,36 @@ export function useGame(
       phase: 'playing',
       crowdSize: 8,
       usedRevive: true,
-      characters: [],
     }));
   }, []);
 
   const nextLevel = useCallback(() => {
     setState((prev) => {
-      const nextLevelNum = prev.level < LEVELS.length ? prev.level + 1 : 1;
-      const newState = initLevel(nextLevelNum - 1);
-      return { ...newState, score: prev.score };
+      const newState = initLevel(prev.level + 1);
+      return newState;
     });
   }, []);
 
   useEffect(() => {
-    const loop = (timestamp: number) => {
-      const dt = Math.min((timestamp - lastTimeRef.current) / 16.67, 3);
-      lastTimeRef.current = timestamp;
+    const loop = (ts: number) => {
+      const dt = Math.min((ts - lastTimeRef.current) / 16.67, 3);
+      lastTimeRef.current = ts;
 
-      const current = stateRef.current;
-      if (current.phase === 'playing' && canvasWidth > 0 && canvasHeight > 0) {
-        const levelDef = LEVELS[Math.min(current.level - 1, LEVELS.length - 1)];
-        const next = updateGame(
-          current,
-          dt,
-          inputXRef.current,
-          canvasWidth,
-          canvasHeight,
-          levelDef
-        );
+      const cur = stateRef.current;
+      if (cur.phase === 'playing' && canvasWidth > 0 && canvasHeight > 0) {
+        const def = generateLevel(cur.level);
+        const next = updateGame(cur, dt, inputXRef.current, canvasWidth, canvasHeight, def);
         setState(next);
         stateRef.current = next;
 
-        // Persist best
         if (next.phase === 'levelComplete' || next.phase === 'gameOver') {
-          if (next.score > bestScore) {
+          if (next.score > bestScoreRef.current) {
             setBestScore(next.score);
-            try { localStorage.setItem('cr_bestScore', String(next.score)); } catch { }
+            try { localStorage.setItem('cr_best', String(next.score)); } catch {}
           }
-          if (next.crowdSize > bestCrowd) {
+          if (next.crowdSize > bestCrowdRef.current) {
             setBestCrowd(next.crowdSize);
-            try { localStorage.setItem('cr_bestCrowd', String(next.crowdSize)); } catch { }
+            try { localStorage.setItem('cr_crowd', String(next.crowdSize)); } catch {}
           }
         }
       }
@@ -111,7 +100,7 @@ export function useGame(
 
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [canvasWidth, canvasHeight, bestScore, bestCrowd]);
+  }, [canvasWidth, canvasHeight]);
 
   return { state, inputXRef, restart, revive, nextLevel, bestScore, bestCrowd };
 }

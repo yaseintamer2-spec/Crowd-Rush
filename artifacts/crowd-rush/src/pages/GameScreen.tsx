@@ -6,7 +6,6 @@ import { RewardedAd } from '../components/ads/RewardedAd';
 import { LevelCompleteScreen } from './LevelCompleteScreen';
 import { GameOverScreen } from './GameOverScreen';
 import { GAME_CONFIG } from '../game/config';
-import { LEVELS } from '../game/levels';
 import type { GameControls } from '../hooks/useGame';
 
 interface Props {
@@ -25,7 +24,10 @@ export function GameScreen({ game, onHome }: Props) {
     const update = () => {
       if (containerRef.current) {
         const r = containerRef.current.getBoundingClientRect();
-        setDims({ width: Math.floor(r.width), height: Math.floor(r.height - GAME_CONFIG.BANNER_HEIGHT) });
+        setDims({
+          width: Math.floor(r.width),
+          height: Math.floor(r.height - GAME_CONFIG.BANNER_HEIGHT),
+        });
       }
     };
     update();
@@ -34,9 +36,9 @@ export function GameScreen({ game, onHome }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  // Show interstitial ad between levels 2 and 4
+  // Show interstitial every 5 levels
   useEffect(() => {
-    if (state.phase === 'levelComplete' && (state.level === 2 || state.level === 4)) {
+    if (state.phase === 'levelComplete' && state.level % 5 === 0) {
       const t = setTimeout(() => {
         pendingNextLevel.current = true;
         setShowInterstitial(true);
@@ -53,7 +55,14 @@ export function GameScreen({ game, onHome }: Props) {
     }
   };
 
-  const isLastLevel = state.level >= LEVELS.length;
+  const handleNext = () => {
+    if (state.level % 5 === 0) {
+      pendingNextLevel.current = true;
+      setShowInterstitial(true);
+    } else {
+      nextLevel();
+    }
+  };
 
   return (
     <div
@@ -77,23 +86,23 @@ export function GameScreen({ game, onHome }: Props) {
           canvasHeight={dims.height}
         />
 
-        {/* Drag hint on first play */}
-        {state.phase === 'playing' && state.crowdProgress < 200 && (
+        {/* Drag hint */}
+        {state.phase === 'playing' && state.crowdProgress < 180 && (
           <div style={{
             position: 'absolute',
-            bottom: '22%',
+            bottom: '24%',
             left: '50%',
             transform: 'translateX(-50%)',
-            color: 'rgba(255,255,255,0.65)',
+            color: 'rgba(255,255,255,0.7)',
             fontSize: 13,
             fontWeight: 600,
             fontFamily: 'Inter, sans-serif',
-            background: 'rgba(0,0,0,0.4)',
+            background: 'rgba(0,0,0,0.45)',
             padding: '8px 18px',
             borderRadius: 20,
             pointerEvents: 'none',
-            animation: 'fadeOut 2s ease 1.5s forwards',
             whiteSpace: 'nowrap',
+            animation: 'fadeOut 2s ease 2s forwards',
           }}>
             ← Drag to steer →
           </div>
@@ -106,16 +115,8 @@ export function GameScreen({ game, onHome }: Props) {
               level={state.level}
               crowdSize={state.crowdSize}
               score={state.score}
-              onNext={() => {
-                if (state.level === 2 || state.level === 4) {
-                  pendingNextLevel.current = true;
-                  setShowInterstitial(true);
-                } else {
-                  nextLevel();
-                }
-              }}
+              onNext={handleNext}
               onHome={onHome}
-              isLastLevel={isLastLevel}
             />
           </div>
         )}
@@ -135,10 +136,7 @@ export function GameScreen({ game, onHome }: Props) {
         {state.phase === 'rewardedAd' && (
           <RewardedAd
             onComplete={() => revive()}
-            onSkip={() => {
-              game.state.usedRevive = true;
-              restart(state.level);
-            }}
+            onSkip={() => restart(state.level)}
           />
         )}
 
@@ -146,18 +144,18 @@ export function GameScreen({ game, onHome }: Props) {
           <InterstitialAd onComplete={handleInterstitialComplete} />
         )}
 
-        {/* Count change floating text */}
+        {/* Floating count change */}
         {state.showCountChange && state.showCountChange.timer > 30 && (
           <div style={{
             position: 'absolute',
             top: '60%',
             left: '50%',
             transform: 'translateX(-50%)',
-            fontSize: 28,
+            fontSize: 30,
             fontWeight: 900,
             fontFamily: 'Inter, sans-serif',
             color: state.showCountChange.value >= 0 ? '#76FF03' : '#FF5252',
-            textShadow: `0 0 12px ${state.showCountChange.value >= 0 ? '#76FF03' : '#FF5252'}`,
+            textShadow: `0 0 14px ${state.showCountChange.value >= 0 ? '#76FF03' : '#FF5252'}`,
             pointerEvents: 'none',
             animation: 'floatUp 0.8s ease forwards',
           }}>
@@ -166,7 +164,7 @@ export function GameScreen({ game, onHome }: Props) {
         )}
       </div>
 
-      {/* Banner Ad - always at bottom, shifts game up */}
+      {/* Banner Ad — always at bottom, shifts game up */}
       <BannerAd />
     </div>
   );
