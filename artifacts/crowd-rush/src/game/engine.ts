@@ -1,15 +1,14 @@
-import { GAME_CONFIG, BLUE_SHADES } from './config';
+import { GAME_CONFIG, SKINS, BLUE_SHADES } from './config';
 import type {
-  GameState, Character, Gate, Obstacle, Particle, Coin, FinalDoor, LevelDef,
+  GameState, Character, Gate, Obstacle, Particle, Coin, LevelDef,
 } from './types';
 import { generateLevel } from './levels';
 
 let nextId = 0;
 const uid = () => ++nextId;
 
-export function buildFormation(count: number): Character[] {
+export function buildFormation(count: number, colors: string[] = BLUE_SHADES): Character[] {
   const chars: Character[] = [];
-  const colors = BLUE_SHADES;
   const radius = GAME_CONFIG.CHARACTER_RADIUS * 2.6;
   const rings = [1, 6, 12, 18, 24, 30, 36, 42, 48];
   let placed = 0;
@@ -48,8 +47,9 @@ export function buildFormation(count: number): Character[] {
   return chars;
 }
 
-export function initLevel(levelNum: number): GameState {
+export function initLevel(levelNum: number, skinId = 'blue'): GameState {
   const def = generateLevel(levelNum);
+  const skin = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
 
   const gates: Gate[] = def.gates.map((g) => ({
     ...g,
@@ -72,14 +72,17 @@ export function initLevel(levelNum: number): GameState {
     bobPhase: Math.random() * Math.PI * 2,
   }));
 
-  const finalDoor: FinalDoor = {
+  const finalDoor = {
     worldY: def.length - 320,
     requiredSize: def.requiredCrowd,
     broken: false,
     breakTimer: 0,
   };
 
-  const characters = buildFormation(Math.min(def.startCrowd, GAME_CONFIG.MAX_VISIBLE_CHARACTERS));
+  const characters = buildFormation(
+    Math.min(def.startCrowd, GAME_CONFIG.MAX_VISIBLE_CHARACTERS),
+    skin.colors
+  );
 
   return {
     phase: 'playing',
@@ -94,10 +97,12 @@ export function initLevel(levelNum: number): GameState {
     finalDoor,
     coins,
     score: 0,
+    coinsCollected: 0,
     time: 0,
     usedRevive: false,
     showingDoorShake: false,
     showCountChange: null,
+    activeSkinId: skinId,
   };
 }
 
@@ -146,21 +151,17 @@ export function updateGame(
   next.coins = [...state.coins];
   next.time += dt;
 
-  // Steer crowd
   if (inputX !== null) {
     const tx = Math.max(0.07, Math.min(0.93, inputX));
     next.crowdX = next.crowdX + (tx - next.crowdX) * 0.16;
   }
 
-  // Advance
   next.crowdProgress += levelDef.speed * dt;
 
-  // Update particles
   next.particles = next.particles
     .map((p) => ({ ...p, x: p.x + p.vx, y: p.y + p.vy, vy: p.vy + 0.09, life: p.life - 1 }))
     .filter((p) => p.life > 0);
 
-  // Flash timers
   next.gates = next.gates.map((g) => ({ ...g, flashTimer: Math.max(0, g.flashTimer - 1) }));
   next.obstacles = next.obstacles.map((o) => ({ ...o, flashTimer: Math.max(0, o.flashTimer - 1) }));
 
@@ -173,6 +174,8 @@ export function updateGame(
   const crowdScreenY = GAME_CONFIG.HUD_HEIGHT + gameHeight * GAME_CONFIG.CROWD_CENTER_Y_RATIO;
   const pathLeft = (canvasWidth - GAME_CONFIG.PATH_WIDTH) / 2;
   const crowdCX = pathLeft + next.crowdX * GAME_CONFIG.PATH_WIDTH;
+
+  const skin = SKINS.find((s) => s.id === next.activeSkinId) ?? SKINS[0];
 
   // Gate collisions
   for (let i = 0; i < next.gates.length; i++) {
@@ -188,7 +191,7 @@ export function updateGame(
       spawnParticles(next, crowdCX, crowdScreenY, newSize >= oldSize ? '#76FF03' : '#FF5252', 14);
       next.gates[i] = { ...gate, passed: true, passedSide: isLeft ? 'left' : 'right', flashTimer: 20 };
       next.score += Math.max(0, next.crowdSize - oldSize) * 10;
-      next.characters = buildFormation(Math.min(next.crowdSize, GAME_CONFIG.MAX_VISIBLE_CHARACTERS));
+      next.characters = buildFormation(Math.min(next.crowdSize, GAME_CONFIG.MAX_VISIBLE_CHARACTERS), skin.colors);
     }
   }
 
@@ -207,7 +210,7 @@ export function updateGame(
       spawnParticles(next, crowdCX, crowdScreenY, '#FF5252', 12);
       next.crowdSize = newSize;
       next.obstacles[i] = { ...obs, hit: true, flashTimer: 25 };
-      next.characters = buildFormation(Math.min(next.crowdSize, GAME_CONFIG.MAX_VISIBLE_CHARACTERS));
+      next.characters = buildFormation(Math.min(next.crowdSize, GAME_CONFIG.MAX_VISIBLE_CHARACTERS), skin.colors);
     }
   }
 
@@ -219,8 +222,9 @@ export function updateGame(
     const cx = pathLeft + coin.x * GAME_CONFIG.PATH_WIDTH;
     if (Math.abs(cx - crowdCX) < 55 && Math.abs(csy - crowdScreenY) < 45) {
       next.coins[i] = { ...coin, collected: true };
+      next.coinsCollected += 1;
       spawnParticles(next, cx, csy, '#FFD700', 8);
-      spawnParticles(next, cx, csy - 20, '#FFD700', 0, '+100');
+      spawnParticles(next, cx, csy - 20, '#FFD700', 0, '+coin');
       next.score += 100;
     }
   }
@@ -235,6 +239,7 @@ export function updateGame(
         spawnParticles(next, canvasWidth / 2, dsy, '#76FF03', 20);
         spawnParticles(next, canvasWidth / 2, dsy - 40, '#FFD700', 0, 'SMASHED!');
         next.score += next.crowdSize * 50 + 500;
+        next.coinsCollected += Math.floor(next.crowdSize / 5);
       } else {
         next.phase = 'gameOver';
       }
@@ -245,13 +250,11 @@ export function updateGame(
     }
   }
 
-  // Crowd died
   if (next.crowdSize <= 0) {
     next.crowdSize = 0;
     next.phase = next.usedRevive ? 'gameOver' : 'rewardedAd';
   }
 
-  // Past end
   if (next.crowdProgress >= levelDef.length && next.phase === 'playing') {
     next.phase = 'levelComplete';
   }

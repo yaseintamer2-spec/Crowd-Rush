@@ -98,8 +98,10 @@ export interface GameState {
   finalDoor: FinalDoor | null;
   coins: Coin[];
   score: number;
+  coinsCollected: number;
   time: number;
   usedRevive: boolean;
   showingDoorShake: boolean;
   showCountChange: { value: number; timer: number } | null;
+  activeSkinId: string;
 }

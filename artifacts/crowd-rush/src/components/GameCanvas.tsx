@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import type { GameState } from '../game/types';
 import { renderGame, renderHUD } from '../game/renderer';
 import { GAME_CONFIG } from '../game/config';
-import { LEVELS } from '../game/levels';
+import { generateLevel, getLevelMeta } from '../game/levels';
 
 interface Props {
   state: GameState;
@@ -19,10 +19,8 @@ export function GameCanvas({ state, inputXRef, canvasWidth, canvasHeight }: Prop
   const handlePointerMove = useCallback((clientX: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const pathLeft = (canvasWidth - GAME_CONFIG.PATH_WIDTH) / 2;
     const rect = canvas.getBoundingClientRect();
-    const { pathLeft } = {
-      pathLeft: (canvasWidth - GAME_CONFIG.PATH_WIDTH) / 2,
-    };
     const relX = (clientX - rect.left - pathLeft) / GAME_CONFIG.PATH_WIDTH;
     inputXRef.current = Math.max(0.05, Math.min(0.95, relX));
   }, [canvasWidth, inputXRef]);
@@ -33,14 +31,10 @@ export function GameCanvas({ state, inputXRef, canvasWidth, canvasHeight }: Prop
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
-    if (e.touches.length > 0) {
-      handlePointerMove(e.touches[0].clientX);
-    }
+    if (e.touches.length > 0) handlePointerMove(e.touches[0].clientX);
   }, [handlePointerMove]);
 
-  const onMouseLeave = useCallback(() => {
-    // keep last position when leaving
-  }, []);
+  const onMouseLeave = useCallback(() => {}, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -49,12 +43,13 @@ export function GameCanvas({ state, inputXRef, canvasWidth, canvasHeight }: Prop
     if (!ctx) return;
 
     const gameHeight = canvasHeight - GAME_CONFIG.HUD_HEIGHT - GAME_CONFIG.BANNER_HEIGHT;
-    const levelDef = LEVELS[Math.min(state.level - 1, LEVELS.length - 1)];
+    const levelDef = generateLevel(state.level);
+    const meta = getLevelMeta(state.level);
 
     const draw = (ts: number) => {
       timeRef.current = ts / 1000;
       renderGame(ctx, state, canvasWidth, canvasHeight, gameHeight, timeRef.current);
-      renderHUD(ctx, state, canvasWidth, levelDef.label, levelDef.length);
+      renderHUD(ctx, state, canvasWidth, meta.twistLabel || `Level ${state.level}`, levelDef.length);
       animRef.current = requestAnimationFrame(draw);
     };
 
@@ -70,12 +65,7 @@ export function GameCanvas({ state, inputXRef, canvasWidth, canvasHeight }: Prop
       onMouseMove={onMouseMove}
       onTouchMove={onTouchMove}
       onMouseLeave={onMouseLeave}
-      style={{
-        display: 'block',
-        touchAction: 'none',
-        cursor: 'none',
-        userSelect: 'none',
-      }}
+      style={{ display: 'block', touchAction: 'none', cursor: 'none', userSelect: 'none' }}
     />
   );
 }

@@ -1,7 +1,9 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import type { GameState } from '../game/types';
-import { initLevel, updateGame } from '../game/engine';
+import { initLevel, updateGame, buildFormation } from '../game/engine';
 import { generateLevel } from '../game/levels';
+import { SKINS } from '../game/config';
+import { GAME_CONFIG } from '../game/config';
 
 export interface GameControls {
   state: GameState;
@@ -13,8 +15,11 @@ export interface GameControls {
   bestCrowd: number;
 }
 
-export function useGame(canvasWidth: number, canvasHeight: number): GameControls {
-  // ── all hooks declared unconditionally and in stable order ──
+export function useGame(
+  canvasWidth: number,
+  canvasHeight: number,
+  skinId = 'blue'
+): GameControls {
   const [state, setState] = useState<GameState>(() => ({
     phase: 'home',
     level: 1,
@@ -28,11 +33,14 @@ export function useGame(canvasWidth: number, canvasHeight: number): GameControls
     finalDoor: null,
     coins: [],
     score: 0,
+    coinsCollected: 0,
     time: 0,
     usedRevive: false,
     showingDoorShake: false,
     showCountChange: null,
+    activeSkinId: skinId,
   }));
+
   const [bestScore, setBestScore] = useState<number>(() => {
     try { return parseInt(localStorage.getItem('cr_best') || '0'); } catch { return 0; }
   });
@@ -49,26 +57,29 @@ export function useGame(canvasWidth: number, canvasHeight: number): GameControls
   bestScoreRef.current = bestScore;
   const bestCrowdRef = useRef(bestCrowd);
   bestCrowdRef.current = bestCrowd;
+  const skinIdRef = useRef(skinId);
+  skinIdRef.current = skinId;
 
   const restart = useCallback((level: number) => {
-    setState(initLevel(Math.max(1, level)));
+    setState(initLevel(Math.max(1, level), skinIdRef.current));
     inputXRef.current = null;
   }, []);
 
   const revive = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      phase: 'playing',
-      crowdSize: 8,
-      usedRevive: true,
-    }));
+    setState((prev) => {
+      const skin = SKINS.find((s) => s.id === prev.activeSkinId) ?? SKINS[0];
+      return {
+        ...prev,
+        phase: 'playing',
+        crowdSize: 8,
+        usedRevive: true,
+        characters: buildFormation(8, skin.colors),
+      };
+    });
   }, []);
 
   const nextLevel = useCallback(() => {
-    setState((prev) => {
-      const newState = initLevel(prev.level + 1);
-      return newState;
-    });
+    setState((prev) => initLevel(prev.level + 1, prev.activeSkinId));
   }, []);
 
   useEffect(() => {

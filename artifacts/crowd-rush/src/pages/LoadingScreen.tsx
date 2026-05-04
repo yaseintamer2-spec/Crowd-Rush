@@ -247,12 +247,11 @@ export function LoadingScreen({ onComplete }: Props) {
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          <div style={{
+          <div key={tipIdx} style={{
             color: 'rgba(255,255,255,0.5)',
             fontSize: 11,
             lineHeight: 1.6,
             animation: 'tipFade 0.4s ease',
-            key: tipIdx,
           }}>
             <span style={{ color: '#90CAF9', fontWeight: 700 }}>💡 Tip: </span>
             {TIPS[tipIdx]}

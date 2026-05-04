@@ -5,11 +5,12 @@ interface Props {
   level: number;
   crowdSize: number;
   score: number;
+  coinsEarned: number;
   onNext: () => void;
   onHome: () => void;
 }
 
-export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome }: Props) {
+export function LevelCompleteScreen({ level, crowdSize, score, coinsEarned, onNext, onHome }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef(0);
   const nextMeta = getLevelMeta(level + 1);
@@ -138,6 +139,19 @@ export function LevelCompleteScreen({ level, crowdSize, score, onNext, onHome }:
             }}>⭐</span>
           ))}
         </div>
+
+        {/* Coins earned banner */}
+        {coinsEarned > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.25)',
+            borderRadius: 20, padding: '8px 20px', marginBottom: 16,
+            animation: 'fadeIn 0.5s ease 0.3s both',
+          }}>
+            <span style={{ fontSize: 18 }}>💰</span>
+            <span style={{ color: '#FFD700', fontWeight: 900, fontSize: 15 }}>+{coinsEarned} coins earned!</span>
+          </div>
+        )}
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
