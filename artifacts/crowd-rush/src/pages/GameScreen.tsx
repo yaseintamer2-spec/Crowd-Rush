@@ -96,6 +96,7 @@ export function GameScreen({ game, onHome, addCoins, coins, spendCoins }: Props)
         <GameCanvas
           state={state}
           inputXRef={inputXRef}
+          shootingRef={game.shootingRef}
           canvasWidth={dims.width}
           canvasHeight={dims.height}
         />

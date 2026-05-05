@@ -41,6 +41,8 @@ export interface Obstacle {
   x: number;
   width: number;
   height: number;
+  health: number;
+  maxHealth: number;
   hit: boolean;
   flashTimer: number;
 }
@@ -65,7 +67,33 @@ export interface FinalDoor {
   breakTimer: number;
 }
 
+export interface Zombie {
+  id: number;
+  worldY: number;
+  x: number;
+  health: number;
+  maxHealth: number;
+  hit: boolean;
+  flashTimer: number;
+}
+
+export interface Bullet {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+}
+
 export interface Coin {
+  id: number;
+  worldY: number;
+  x: number;
+  collected: boolean;
+  bobPhase: number;
+}
+
+export interface GunUpgrade {
   id: number;
   worldY: number;
   x: number;
@@ -82,6 +110,8 @@ export interface LevelDef {
   gates: Omit<Gate, 'id' | 'passed' | 'flashTimer'>[];
   obstacles: Omit<Obstacle, 'id' | 'hit' | 'flashTimer'>[];
   coins: Omit<Coin, 'id' | 'collected' | 'bobPhase'>[];
+  zombies: Omit<Zombie, 'id' | 'hit' | 'flashTimer'>[];
+  gunUpgrades: Omit<GunUpgrade, 'id' | 'collected' | 'bobPhase'>[];
   requiredCrowd: number;
 }
 
@@ -94,11 +124,16 @@ export interface GameState {
   characters: Character[];
   gates: Gate[];
   obstacles: Obstacle[];
+  zombies: Zombie[];
+  bullets: Bullet[];
   particles: Particle[];
   finalDoor: FinalDoor | null;
   coins: Coin[];
+  gunUpgrades: GunUpgrade[];
   score: number;
   coinsCollected: number;
+  gunLevel: number;
+  shootCooldown: number;
   time: number;
   usedRevive: boolean;
   showingDoorShake: boolean;

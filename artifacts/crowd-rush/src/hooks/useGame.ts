@@ -8,6 +8,7 @@ import { GAME_CONFIG } from '../game/config';
 export interface GameControls {
   state: GameState;
   inputXRef: React.MutableRefObject<number | null>;
+  shootingRef: React.MutableRefObject<boolean>;
   restart: (level: number) => void;
   revive: () => void;
   nextLevel: () => void;
@@ -29,11 +30,16 @@ export function useGame(
     characters: [],
     gates: [],
     obstacles: [],
+    zombies: [],
+    bullets: [],
     particles: [],
     finalDoor: null,
     coins: [],
+    gunUpgrades: [],
     score: 0,
     coinsCollected: 0,
+    gunLevel: 1,
+    shootCooldown: 0,
     time: 0,
     usedRevive: false,
     showingDoorShake: false,
@@ -51,6 +57,7 @@ export function useGame(
   const stateRef = useRef(state);
   stateRef.current = state;
   const inputXRef = useRef<number | null>(null);
+  const shootingRef = useRef(false);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const bestScoreRef = useRef(bestScore);
@@ -68,12 +75,14 @@ export function useGame(
   const revive = useCallback(() => {
     setState((prev) => {
       const skin = SKINS.find((s) => s.id === prev.activeSkinId) ?? SKINS[0];
+      const reviveCrowd = Math.max(14, Math.ceil((prev.finalDoor?.requiredSize ?? 18) * 0.65));
       return {
         ...prev,
         phase: 'playing',
-        crowdSize: 8,
+        crowdSize: reviveCrowd,
+        crowdProgress: Math.max(0, prev.crowdProgress - 560),
         usedRevive: true,
-        characters: buildFormation(8, skin.colors),
+        characters: buildFormation(Math.min(reviveCrowd, GAME_CONFIG.MAX_VISIBLE_CHARACTERS), skin.colors),
       };
     });
   }, []);
@@ -84,13 +93,17 @@ export function useGame(
 
   useEffect(() => {
     const loop = (ts: number) => {
+      if (lastTimeRef.current && ts - lastTimeRef.current < 33) {
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
       const dt = Math.min((ts - lastTimeRef.current) / 16.67, 3);
       lastTimeRef.current = ts;
 
       const cur = stateRef.current;
       if (cur.phase === 'playing' && canvasWidth > 0 && canvasHeight > 0) {
         const def = generateLevel(cur.level);
-        const next = updateGame(cur, dt, inputXRef.current, canvasWidth, canvasHeight, def);
+        const next = updateGame(cur, dt, inputXRef.current, shootingRef.current, canvasWidth, canvasHeight, def);
         setState(next);
         stateRef.current = next;
 
@@ -113,5 +126,5 @@ export function useGame(
     return () => cancelAnimationFrame(rafRef.current);
   }, [canvasWidth, canvasHeight]);
 
-  return { state, inputXRef, restart, revive, nextLevel, bestScore, bestCrowd };
+  return { state, inputXRef, shootingRef, restart, revive, nextLevel, bestScore, bestCrowd };
 }

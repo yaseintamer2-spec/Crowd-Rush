@@ -1,5 +1,5 @@
 import { GAME_CONFIG } from './config';
-import type { GameState, Character, Gate, Obstacle, Particle, FinalDoor, Coin } from './types';
+import type { GameState, Character, Gate, Obstacle, Particle, FinalDoor, Coin, Zombie, Bullet, GunUpgrade } from './types';
 import { getLevelMeta } from './levels';
 
 const { PATH_WIDTH, HUD_HEIGHT, BANNER_HEIGHT, GAME_CONFIG: _ } = { ...GAME_CONFIG, GAME_CONFIG: null };
@@ -18,75 +18,44 @@ function drawCharacter(
   char: Character,
   time: number
 ) {
-  const bob = Math.sin(time * 7 + char.bobPhase) * 3;
+  const bob = Math.sin(time * 10 + char.bobPhase) * 2.2;
   const s = char.scale;
   const cy = y + bob;
-  const legSwing = Math.sin(time * 9 + char.runPhase);
+  const squash = 1 + Math.sin(time * 12 + char.runPhase) * 0.045;
 
   ctx.save();
-  ctx.fillStyle = char.color;
-
-  // Drop shadow
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = '#000033';
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.beginPath();
-  ctx.ellipse(x, cy + 22 * s, 9 * s, 3.5 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, cy + 18 * s, 10 * s, 4 * s, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.restore();
 
   ctx.fillStyle = char.color;
-
-  // Left leg
-  ctx.save();
-  ctx.translate(x - 4 * s, cy + 8 * s);
-  ctx.rotate(-legSwing * 0.45);
-  pill(ctx, 5 * s, 13 * s);
-  ctx.fill();
-  ctx.restore();
-
-  // Right leg
-  ctx.save();
-  ctx.translate(x + 4 * s, cy + 8 * s);
-  ctx.rotate(legSwing * 0.45);
-  pill(ctx, 5 * s, 13 * s);
-  ctx.fill();
-  ctx.restore();
-
-  // Body
-  bodyRect(ctx, x - 7 * s, cy - 8 * s, 14 * s, 19 * s, 5 * s);
-  ctx.fill();
-
-  // Left arm
-  ctx.save();
-  ctx.translate(x - 10 * s, cy - 4 * s);
-  ctx.rotate(legSwing * 0.4);
-  pill(ctx, 4.5 * s, 11 * s);
-  ctx.fill();
-  ctx.restore();
-
-  // Right arm
-  ctx.save();
-  ctx.translate(x + 10 * s, cy - 4 * s);
-  ctx.rotate(-legSwing * 0.4);
-  pill(ctx, 4.5 * s, 11 * s);
-  ctx.fill();
-  ctx.restore();
-
-  // Head
   ctx.beginPath();
-  ctx.arc(x, cy - 13 * s, 7 * s, 0, Math.PI * 2);
+  ctx.ellipse(x, cy + 2 * s, 11 * s, 15 * s * squash, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Subtle highlight on head
-  ctx.save();
-  ctx.globalAlpha = 0.25;
-  ctx.fillStyle = '#90CAF9';
+  ctx.fillStyle = lighten(char.color, 42);
   ctx.beginPath();
-  ctx.arc(x - 2 * s, cy - 15 * s, 3 * s, 0, Math.PI * 2);
+  ctx.arc(x, cy - 14 * s, 7 * s, 0, Math.PI * 2);
   ctx.fill();
-  ctx.restore();
 
+  // Arms animation
+  const armSwing = Math.sin(time * 12 + char.runPhase + Math.PI) * 0.3;
+  ctx.strokeStyle = char.color;
+  ctx.lineWidth = 2 * s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - 5 * s, cy - 5 * s);
+  ctx.lineTo(x - 8 * s + armSwing * 5, cy + 5 * s + armSwing * 3);
+  ctx.moveTo(x + 5 * s, cy - 5 * s);
+  ctx.lineTo(x + 8 * s - armSwing * 5, cy + 5 * s - armSwing * 3);
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.32;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x - 3 * s, cy - 17 * s, 2.2 * s, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -140,89 +109,43 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: number, scrollY: number, levelNum: number) {
   const meta = getLevelMeta(levelNum);
   const { pathLeft, pathRight } = getPathBounds(width);
-
   const isDark = meta.twist === 'darkRun';
 
-  // Sky
-  const skyGrad = ctx.createLinearGradient(0, HUD_HEIGHT, 0, HUD_HEIGHT + (height - HUD_HEIGHT) * 0.45);
-  if (isDark) {
-    skyGrad.addColorStop(0, '#0a0a1a');
-    skyGrad.addColorStop(1, '#111125');
-  } else {
-    skyGrad.addColorStop(0, '#87CEEB');
-    skyGrad.addColorStop(1, '#C5E8F7');
-  }
-  ctx.fillStyle = skyGrad;
+  ctx.fillStyle = isDark ? '#111225' : '#5ed36d';
   ctx.fillRect(0, HUD_HEIGHT, width, height);
 
-  // Grass
-  const grassL = isDark ? '#1a2a1a' : '#4CAF50';
-  const grassD = isDark ? '#0d150d' : '#388E3C';
-  const grassGrad = ctx.createLinearGradient(0, 0, 0, height);
-  grassGrad.addColorStop(0, grassL);
-  grassGrad.addColorStop(1, grassD);
-  ctx.fillStyle = grassGrad;
-  ctx.fillRect(0, HUD_HEIGHT, pathLeft, height);
-  ctx.fillRect(pathRight, HUD_HEIGHT, width - pathRight, height);
-
-  // Grass stripes
-  ctx.save();
-  ctx.globalAlpha = 0.12;
-  const stripeOff = scrollY % 60;
-  for (let y = HUD_HEIGHT - stripeOff; y < height; y += 60) {
-    ctx.fillStyle = isDark ? '#112211' : '#2E7D32';
-    ctx.fillRect(0, y, pathLeft, 10);
-    ctx.fillRect(pathRight, y, width - pathRight, 10);
-  }
-  ctx.restore();
-
-  // Path
-  const pathGrad = ctx.createLinearGradient(pathLeft, 0, pathRight, 0);
-  if (isDark) {
-    pathGrad.addColorStop(0, '#1a1a2e');
-    pathGrad.addColorStop(0.1, '#22223b');
-    pathGrad.addColorStop(0.5, '#2a2a4a');
-    pathGrad.addColorStop(0.9, '#22223b');
-    pathGrad.addColorStop(1, '#1a1a2e');
-  } else {
-    pathGrad.addColorStop(0, '#8D6E63');
-    pathGrad.addColorStop(0.1, '#A1887F');
-    pathGrad.addColorStop(0.5, '#BCAAA4');
-    pathGrad.addColorStop(0.9, '#A1887F');
-    pathGrad.addColorStop(1, '#8D6E63');
-  }
-  ctx.fillStyle = pathGrad;
+  ctx.fillStyle = isDark ? '#232445' : '#6f7f92';
   ctx.fillRect(pathLeft, HUD_HEIGHT, PATH_WIDTH, height);
 
-  // Lane dash
+  const stripeOff = scrollY % 80;
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.18)';
+  for (let y = HUD_HEIGHT - stripeOff; y < height; y += 80) {
+    ctx.fillRect(pathLeft, y, PATH_WIDTH, 3);
+  }
+
   ctx.save();
-  ctx.setLineDash([32, 22]);
-  ctx.strokeStyle = isDark ? 'rgba(100,100,255,0.2)' : 'rgba(255,255,255,0.22)';
-  ctx.lineWidth = 3;
-  const cx = width / 2;
+  ctx.setLineDash([30, 20]);
+  ctx.strokeStyle = '#ffffff';
+  ctx.globalAlpha = 0.42;
+  ctx.lineWidth = 4;
   ctx.lineDashOffset = scrollY % 54;
   ctx.beginPath();
-  ctx.moveTo(cx, HUD_HEIGHT);
-  ctx.lineTo(cx, height);
+  ctx.moveTo(width / 2, HUD_HEIGHT);
+  ctx.lineTo(width / 2, height);
   ctx.stroke();
   ctx.restore();
 
-  // Path edge shadows
-  const sw = 24;
-  const ls = ctx.createLinearGradient(pathLeft, 0, pathLeft + sw, 0);
-  ls.addColorStop(0, 'rgba(0,0,0,0.4)');
-  ls.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = ls;
-  ctx.fillRect(pathLeft, HUD_HEIGHT, sw, height);
-  const rs = ctx.createLinearGradient(pathRight - sw, 0, pathRight, 0);
-  rs.addColorStop(0, 'rgba(0,0,0,0)');
-  rs.addColorStop(1, 'rgba(0,0,0,0.4)');
-  ctx.fillStyle = rs;
-  ctx.fillRect(pathRight - sw, HUD_HEIGHT, sw, height);
+  ctx.fillStyle = isDark ? '#7C4DFF' : '#2ad4ff';
+  ctx.fillRect(pathLeft - 5, HUD_HEIGHT, 5, height);
+  ctx.fillRect(pathRight, HUD_HEIGHT, 5, height);
+
+  ctx.fillStyle = isDark ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.12)';
+  ctx.fillRect(pathLeft, HUD_HEIGHT, 14, height);
+  ctx.fillRect(pathRight - 14, HUD_HEIGHT, 14, height);
 }
 
 /* ─── Gate ─── */
-function drawGate(ctx: CanvasRenderingContext2D, gate: Gate, screenY: number, canvasWidth: number, time: number) {
+function drawGate(ctx: CanvasRenderingContext2D, gate: Gate, screenY: number, canvasWidth: number, _time: number) {
   const { pathLeft, pathRight } = getPathBounds(canvasWidth);
   const cx = canvasWidth / 2;
   const h = GAME_CONFIG.GATE_HEIGHT;
@@ -233,72 +156,43 @@ function drawGate(ctx: CanvasRenderingContext2D, gate: Gate, screenY: number, ca
   ctx.save();
   if (gate.flashTimer > 0) ctx.globalAlpha = Math.min(1, gate.flashTimer / 8);
 
-  // Left backing
-  ctx.fillStyle = gate.leftColor + '28';
-  ctx.fillRect(pathLeft, screenY, cx - pathLeft - pw / 2, h);
+  ctx.fillStyle = gate.leftColor + '44';
+  roundRect(ctx, pathLeft, screenY, cx - pathLeft - pw / 2, h, 12);
+  ctx.fill();
 
-  // Right backing
-  ctx.fillStyle = gate.rightColor + '28';
-  ctx.fillRect(cx + pw / 2, screenY, pathRight - cx - pw / 2, h);
+  ctx.fillStyle = gate.rightColor + '44';
+  roundRect(ctx, cx + pw / 2, screenY, pathRight - cx - pw / 2, h, 12);
+  ctx.fill();
 
-  // Left frame
-  drawGateArch(ctx, pathLeft, screenY, cx - pathLeft - pw / 2, h, gate.leftColor, pw, time);
-
-  // Right frame
-  drawGateArch(ctx, cx + pw / 2, screenY, pathRight - cx - pw / 2, h, gate.rightColor, pw, time);
+  drawGateArch(ctx, pathLeft, screenY, cx - pathLeft - pw / 2, h, gate.leftColor, pw);
+  drawGateArch(ctx, cx + pw / 2, screenY, pathRight - cx - pw / 2, h, gate.rightColor, pw);
 
   // Center pillar
-  const cpg = ctx.createLinearGradient(cx - pw / 2, 0, cx + pw / 2, 0);
-  cpg.addColorStop(0, '#333');
-  cpg.addColorStop(0.5, '#888');
-  cpg.addColorStop(1, '#333');
-  ctx.fillStyle = cpg;
+  ctx.fillStyle = '#2f3b48';
   ctx.fillRect(cx - pw / 2, screenY, pw, h + 8);
 
-  // Labels
-  ctx.shadowBlur = 6;
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
   ctx.fillStyle = 'white';
-  ctx.font = `bold ${Math.min(30, 30)}px 'Inter', sans-serif`;
+  ctx.font = `900 34px Inter, sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText(gate.leftLabel, (pathLeft + cx) / 2, screenY + h / 2 + 10);
   ctx.fillText(gate.rightLabel, (pathRight + cx) / 2, screenY + h / 2 + 10);
-  ctx.shadowBlur = 0;
 
-  // Pulse top bar
-  const glow = Math.sin(time * 3) * 0.15 + 0.85;
-  ctx.globalAlpha = (gate.flashTimer > 0 ? Math.min(1, gate.flashTimer / 8) : 1) * 0.4 * glow;
   ctx.fillStyle = gate.leftColor;
-  ctx.fillRect(pathLeft, screenY, cx - pathLeft - pw / 2, 5);
+  ctx.fillRect(pathLeft, screenY, cx - pathLeft - pw / 2, 8);
   ctx.fillStyle = gate.rightColor;
-  ctx.fillRect(cx + pw / 2, screenY, pathRight - cx - pw / 2, 5);
+  ctx.fillRect(cx + pw / 2, screenY, pathRight - cx - pw / 2, 8);
 
   ctx.restore();
 }
 
-function drawGateArch(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string, pw: number, time: number) {
+function drawGateArch(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string, pw: number) {
   const r = 10;
-  // Pillars
-  const pg = ctx.createLinearGradient(x, 0, x + pw, 0);
-  pg.addColorStop(0, darken(color, 30));
-  pg.addColorStop(0.5, lighten(color, 15));
-  pg.addColorStop(1, darken(color, 30));
-  ctx.fillStyle = pg;
+  ctx.fillStyle = color;
   roundRect(ctx, x, y, pw, h, r);
   ctx.fill();
   roundRect(ctx, x + w - pw, y, pw, h, r);
   ctx.fill();
-  // Top beam
   ctx.fillRect(x, y, w, pw);
-  // Glow
-  ctx.save();
-  ctx.globalAlpha = 0.35;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 14;
-  ctx.strokeStyle = lighten(color, 25);
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, w, pw);
-  ctx.restore();
 }
 
 /* ─── Obstacle ─── */
@@ -309,33 +203,22 @@ function drawObstacle(ctx: CanvasRenderingContext2D, obs: Obstacle, screenY: num
   ctx.save();
   if (obs.flashTimer > 0) ctx.globalAlpha = 0.5 + Math.sin(obs.flashTimer * 2) * 0.5;
 
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(ox + 4, screenY + 6, obs.width, obs.height);
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.fillRect(ox + 5, screenY + 8, obs.width, obs.height + 4);
 
-  const grad = ctx.createLinearGradient(ox, screenY, ox, screenY + obs.height);
-  grad.addColorStop(0, '#EF5350');
-  grad.addColorStop(0.5, '#D32F2F');
-  grad.addColorStop(1, '#B71C1C');
-  ctx.fillStyle = grad;
+  ctx.fillStyle = '#ff2f3f';
   roundRect(ctx, ox, screenY, obs.width, obs.height, 8);
   ctx.fill();
 
-  // Hazard stripes
-  ctx.save();
-  ctx.clip();
-  ctx.globalAlpha = 0.28;
-  ctx.fillStyle = '#fff';
-  const sw = 18;
-  for (let sx = ox - obs.height; sx < ox + obs.width + obs.height; sx += sw * 2) {
+  ctx.fillStyle = '#FFE082';
+  for (let sx = ox + 10; sx < ox + obs.width - 4; sx += 20) {
     ctx.beginPath();
-    ctx.moveTo(sx, screenY);
-    ctx.lineTo(sx + sw, screenY);
-    ctx.lineTo(sx + sw + obs.height, screenY + obs.height);
-    ctx.lineTo(sx + obs.height, screenY + obs.height);
+    ctx.moveTo(sx, screenY - 10);
+    ctx.lineTo(sx + 8, screenY);
+    ctx.lineTo(sx - 8, screenY);
     ctx.closePath();
     ctx.fill();
   }
-  ctx.restore();
 
   ctx.globalAlpha = 1;
   ctx.fillStyle = 'white';
@@ -343,7 +226,77 @@ function drawObstacle(ctx: CanvasRenderingContext2D, obs: Obstacle, screenY: num
   ctx.textAlign = 'center';
   ctx.shadowColor = 'rgba(0,0,0,0.5)';
   ctx.shadowBlur = 3;
-  ctx.fillText('WALL', ox + obs.width / 2, screenY + obs.height / 2 + 4);
+  ctx.fillText('DANGER', ox + obs.width / 2, screenY + obs.height / 2 + 4);
+  ctx.restore();
+}
+
+function drawZombie(ctx: CanvasRenderingContext2D, zombie: Zombie, screenY: number, canvasWidth: number) {
+  const { pathLeft } = getPathBounds(canvasWidth);
+  const zx = pathLeft + zombie.x * PATH_WIDTH;
+  const alpha = zombie.hit ? 0.4 : 1;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = zombie.hit ? '#7b7b7b' : '#4caf50';
+  ctx.beginPath();
+  ctx.arc(zx, screenY - 16, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#2e7d32';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(zx, screenY - 6);
+  ctx.lineTo(zx, screenY + 12);
+  ctx.moveTo(zx - 8, screenY + 4);
+  ctx.lineTo(zx + 8, screenY + 4);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#2e7d32';
+  ctx.beginPath();
+  ctx.moveTo(zx - 8, screenY + 12);
+  ctx.lineTo(zx + 8, screenY + 16);
+  ctx.moveTo(zx + 8, screenY + 12);
+  ctx.lineTo(zx + 4, screenY + 24);
+  ctx.moveTo(zx - 8, screenY + 12);
+  ctx.lineTo(zx - 4, screenY + 24);
+  ctx.stroke();
+
+  const healthRatio = zombie.health / zombie.maxHealth;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(zx - 18, screenY - 32, 36, 5);
+  ctx.fillStyle = healthRatio > 0.5 ? '#76FF03' : healthRatio > 0.2 ? '#FFC107' : '#f44336';
+  ctx.fillRect(zx - 18, screenY - 32, 36 * healthRatio, 5);
+  ctx.restore();
+}
+
+function drawBullet(ctx: CanvasRenderingContext2D, bullet: Bullet) {
+  ctx.save();
+  ctx.fillStyle = '#ffea00';
+  ctx.shadowColor = '#ffea00';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawGunUpgrade(ctx: CanvasRenderingContext2D, upgrade: GunUpgrade, screenY: number, canvasWidth: number, time: number) {
+  const { pathLeft } = getPathBounds(canvasWidth);
+  const ux = pathLeft + upgrade.x * PATH_WIDTH;
+  const bob = Math.sin(time * 4 + upgrade.bobPhase) * 4;
+  ctx.save();
+  ctx.translate(ux, screenY + bob);
+  ctx.fillStyle = '#42A5F5';
+  roundRect(ctx, -16, -16, 32, 32, 8);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-8, 0);
+  ctx.lineTo(8, 0);
+  ctx.moveTo(0, -8);
+  ctx.lineTo(0, 8);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -356,23 +309,19 @@ function drawCoin(ctx: CanvasRenderingContext2D, coin: Coin, screenY: number, ca
   const r = GAME_CONFIG.COIN_RADIUS;
 
   ctx.save();
-  ctx.shadowColor = '#FFD700';
-  ctx.shadowBlur = 14;
-
-  const cg = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 1, cx, cy, r);
-  cg.addColorStop(0, '#FFF9C4');
-  cg.addColorStop(0.6, '#FFD700');
-  cg.addColorStop(1, '#F57F17');
-  ctx.fillStyle = cg;
+  ctx.fillStyle = '#76FF03';
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = '#E65100';
-  ctx.font = `bold ${r}px Inter, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.shadowBlur = 0;
-  ctx.fillText('$', cx, cy + r * 0.35);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 6);
+  ctx.lineTo(cx, cy + 6);
+  ctx.moveTo(cx - 6, cy);
+  ctx.lineTo(cx + 6, cy);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -387,63 +336,58 @@ function drawFinalDoor(
 ) {
   const { pathLeft } = getPathBounds(canvasWidth);
   const w = PATH_WIDTH;
-  const h = GAME_CONFIG.DOOR_HEIGHT;
+  const h = GAME_CONFIG.DOOR_HEIGHT + 18;
   const canBreak = currentCrowd >= door.requiredSize;
 
   ctx.save();
   if (door.broken) {
-    const shake = Math.sin(door.breakTimer * 1.5) * (door.breakTimer / 30) * 12;
-    ctx.translate(shake, 0);
     ctx.globalAlpha = Math.max(0, door.breakTimer / 30);
+    const split = (45 - door.breakTimer) * 3;
+    ctx.fillStyle = '#9a6a43';
+    roundRect(ctx, pathLeft - split, screenY, w / 2 - 4, h, 8);
+    ctx.fill();
+    roundRect(ctx, pathLeft + w / 2 + 4 + split, screenY, w / 2 - 4, h, 8);
+    ctx.fill();
+    ctx.fillStyle = '#FFD54F';
+    ctx.font = '900 26px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SMASH!', canvasWidth / 2, screenY + h / 2 + 8);
+    ctx.restore();
+    return;
   }
 
   // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.fillRect(pathLeft + 4, screenY + 6, w, h);
 
-  // Door body
-  const grad = ctx.createLinearGradient(pathLeft, screenY, pathLeft + w, screenY + h);
-  grad.addColorStop(0, canBreak ? '#1E88E5' : '#8D6E63');
-  grad.addColorStop(0.5, canBreak ? '#1565C0' : '#6D4C41');
-  grad.addColorStop(1, canBreak ? '#0D47A1' : '#4E342E');
-  ctx.fillStyle = grad;
+  ctx.fillStyle = canBreak ? '#3f8cff' : '#8b5a35';
   roundRect(ctx, pathLeft, screenY, w, h, 10);
   ctx.fill();
 
-  // Panel lines
-  ctx.save();
-  ctx.clip();
+  // Wall blocks and crack
   for (let py = screenY; py < screenY + h; py += 22) {
-    ctx.fillStyle = 'rgba(0,0,0,0.1)';
-    ctx.fillRect(pathLeft, py + 10, w, 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
+    ctx.fillRect(pathLeft + 12, py + 10, w - 24, 3);
   }
-  for (let i = 1; i < 4; i++) {
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fillRect(pathLeft + (w / 4) * i - 2, screenY, 4, h);
-  }
-  ctx.restore();
-
-  // Handles
-  ctx.fillStyle = canBreak ? '#FFD700' : '#9E9E9E';
-  ctx.shadowColor = canBreak ? '#FFD700' : 'transparent';
-  ctx.shadowBlur = canBreak ? 12 : 0;
-  [[0.375], [0.625]].forEach(([f]) => {
-    ctx.beginPath();
-    ctx.arc(pathLeft + w * f, screenY + h / 2, 9, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(pathLeft + w / 2 - 3, screenY, 6, h);
+  ctx.strokeStyle = canBreak ? '#ffffff' : '#3d2718';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(pathLeft + w * 0.43, screenY + 18);
+  ctx.lineTo(pathLeft + w * 0.5, screenY + 38);
+  ctx.lineTo(pathLeft + w * 0.45, screenY + 58);
+  ctx.lineTo(pathLeft + w * 0.54, screenY + 82);
+  ctx.stroke();
 
   // Text
   ctx.fillStyle = 'white';
-  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.font = '900 15px Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
-  ctx.shadowBlur = 6;
   ctx.fillText(`NEED ${door.requiredSize}`, canvasWidth / 2, screenY + h / 2 - 6);
-  ctx.font = 'bold 12px Inter, sans-serif';
-  ctx.fillStyle = canBreak ? '#76FF03' : '#FF5252';
-  ctx.fillText(canBreak ? '✓ SMASH IT!' : `${currentCrowd}/${door.requiredSize}`, canvasWidth / 2, screenY + h / 2 + 14);
+  ctx.font = '900 13px Inter, sans-serif';
+  ctx.fillStyle = canBreak ? '#B6FF4A' : '#FFD1D1';
+  ctx.fillText(canBreak ? 'BREAK WALL' : `${currentCrowd}/${door.requiredSize}`, canvasWidth / 2, screenY + h / 2 + 16);
 
   ctx.restore();
 }
@@ -458,13 +402,9 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
     ctx.font = `bold ${20 * scale}px Inter, sans-serif`;
     ctx.fillStyle = p.color;
     ctx.textAlign = 'center';
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = 10;
     ctx.fillText(p.text, p.x, p.y);
   } else {
     ctx.fillStyle = p.color;
-    ctx.shadowColor = p.color;
-    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
     ctx.fill();
@@ -488,6 +428,26 @@ export function renderGame(
   const { pathLeft } = getPathBounds(canvasWidth);
   const crowdScreenY = HUD_HEIGHT + gameHeight * GAME_CONFIG.CROWD_CENTER_Y_RATIO;
   const worldToScreen = (wy: number) => crowdScreenY - (wy - state.crowdProgress);
+
+  // Gun upgrades
+  for (const upgrade of state.gunUpgrades) {
+    if (!upgrade.collected) {
+      const sy = worldToScreen(upgrade.worldY);
+      if (sy > HUD_HEIGHT - 40 && sy < canvasHeight) drawGunUpgrade(ctx, upgrade, sy, canvasWidth, time);
+    }
+  }
+
+  // Zombies
+  for (const zombie of state.zombies) {
+    if (zombie.hit) continue;
+    const sy = worldToScreen(zombie.worldY);
+    if (sy > HUD_HEIGHT - 40 && sy < canvasHeight) drawZombie(ctx, zombie, sy, canvasWidth);
+  }
+
+  // Bullets
+  for (const bullet of state.bullets) {
+    if (bullet.y > HUD_HEIGHT - 40 && bullet.y < canvasHeight) drawBullet(ctx, bullet);
+  }
 
   // Coins
   for (const coin of state.coins) {
@@ -519,9 +479,8 @@ export function renderGame(
   }
 
   // Crowd characters
-  const sorted = [...state.characters].sort((a, b) => a.offsetY - b.offsetY);
   const crowdCX = pathLeft + state.crowdX * PATH_WIDTH;
-  for (const char of sorted) {
+  for (const char of state.characters) {
     const cx = crowdCX + char.offsetX;
     const cy = crowdScreenY + char.offsetY;
     if (cy > HUD_HEIGHT - 40 && cy < canvasHeight) drawCharacter(ctx, cx, cy, char, time);
@@ -561,10 +520,7 @@ export function renderHUD(
   ctx.fillText('CROWD', 18, 19);
   ctx.font = 'bold 32px Inter, sans-serif';
   ctx.fillStyle = '#76FF03';
-  ctx.shadowColor = '#76FF03';
-  ctx.shadowBlur = 12;
   ctx.fillText(String(state.crowdSize), 18, 54);
-  ctx.shadowBlur = 0;
 
   // Level + progress
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -588,6 +544,15 @@ export function renderHUD(
   roundRect(ctx, bx, by, bw * prog, bh, 3);
   ctx.fill();
 
+  // Gun power
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = 'bold 10px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('GUN LV', 120, 20);
+  ctx.font = 'bold 22px Inter, sans-serif';
+  ctx.fillStyle = '#42A5F5';
+  ctx.fillText(String(state.gunLevel), 120, 48);
+
   // Score
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = 'bold 10px Inter, sans-serif';
@@ -595,10 +560,7 @@ export function renderHUD(
   ctx.fillText('SCORE', canvasWidth - 18, 19);
   ctx.font = 'bold 26px Inter, sans-serif';
   ctx.fillStyle = '#FFD700';
-  ctx.shadowColor = '#FFD700';
-  ctx.shadowBlur = 8;
   ctx.fillText(String(state.score), canvasWidth - 18, 52);
-  ctx.shadowBlur = 0;
 }
 
 function lighten(hex: string, a: number) {

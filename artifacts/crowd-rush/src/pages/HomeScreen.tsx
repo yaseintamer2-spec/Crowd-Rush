@@ -332,8 +332,23 @@ export function HomeScreen({ onPlay, onShop, bestScore, bestCrowd, coins, active
       position: 'relative',
       background: '#03031a',
     }}>
-      {/* Animated game preview background */}
-      <PreviewCanvas skinId={activeSkin} />
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `linear-gradient(180deg, #111827 0%, #0b1020 48%, ${skin.gradient[1]} 180%)`,
+      }} />
+      <div style={{
+        position: 'absolute',
+        left: '50%',
+        top: 90,
+        width: 230,
+        height: '74%',
+        transform: 'translateX(-50%)',
+        background: 'linear-gradient(90deg, #576273, #747f92 50%, #576273)',
+        borderLeft: `5px solid ${skin.gradient[0]}`,
+        borderRight: `5px solid ${skin.gradient[0]}`,
+        opacity: 0.95,
+      }} />
 
       {/* Top bar */}
       <div style={{
