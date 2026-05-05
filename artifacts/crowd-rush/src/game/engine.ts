@@ -189,16 +189,17 @@ export function updateGame(
   next.crowdProgress += levelDef.speed * dt;
 
   next.shootCooldown = Math.max(0, next.shootCooldown - dt * 60);
-  if (isShooting && next.shootCooldown <= 0) {
+  const isInCombatLane = next.crowdX < 0.4;
+  if ((isShooting || isInCombatLane) && next.shootCooldown <= 0) {
     next.bullets.push({
       id: uid(),
       x: crowdCX,
       y: crowdScreenY - 24,
       vx: 0,
-      vy: -10 - next.gunLevel * 0.6,
+      vy: -11 - next.gunLevel * 0.8,
     });
-    next.shootCooldown = Math.max(6, 12 - next.gunLevel * 2);
-    spawnParticles(next, crowdCX, crowdScreenY - 24, '#ffffff', 3);
+    next.shootCooldown = Math.max(4, 13 - next.gunLevel * 2);
+    spawnParticles(next, crowdCX - 10, crowdScreenY - 34, '#fff59d', 4);
   }
 
   next.particles = next.particles
@@ -221,7 +222,7 @@ export function updateGame(
 
   const skin = SKINS.find((s) => s.id === next.activeSkinId) ?? SKINS[0];
 
-  const bulletDamage = 1 + Math.floor(next.gunLevel / 2);
+  const bulletDamage = next.gunLevel;
   const activeBullets: Bullet[] = [];
   for (const bullet of next.bullets) {
     let collided = false;
@@ -246,6 +247,22 @@ export function updateGame(
     if (!collided) activeBullets.push(bullet);
   }
   next.bullets = activeBullets;
+
+  for (let zi = 0; zi < next.zombies.length; zi++) {
+    const zombie = next.zombies[zi];
+    if (zombie.hit) continue;
+    const zsy = crowdScreenY - (zombie.worldY - next.crowdProgress);
+    const zx = pathLeft + zombie.x * GAME_CONFIG.PATH_WIDTH;
+    if (Math.abs(zx - crowdCX) < 52 && zsy > crowdScreenY - 26 && zsy < crowdScreenY + 34) {
+      const loss = Math.min(next.crowdSize, Math.max(1, zombie.health));
+      const newSize = Math.max(0, next.crowdSize - loss);
+      applyCountChange(next, newSize, crowdCX, crowdScreenY - 52);
+      next.crowdSize = newSize;
+      next.zombies[zi] = { ...zombie, hit: true, health: 0, flashTimer: 24 };
+      next.characters = buildFormation(Math.min(next.crowdSize, GAME_CONFIG.MAX_VISIBLE_CHARACTERS), skin.colors);
+      spawnParticles(next, crowdCX, crowdScreenY, '#FF5252', 10, `-${loss}`);
+    }
+  }
 
   for (let i = 0; i < next.gunUpgrades.length; i++) {
     const upgrade = next.gunUpgrades[i];
@@ -304,11 +321,14 @@ export function updateGame(
     const csy = crowdScreenY - (coin.worldY - next.crowdProgress);
     const cx = pathLeft + coin.x * GAME_CONFIG.PATH_WIDTH;
     if (Math.abs(cx - crowdCX) < 55 && Math.abs(csy - crowdScreenY) < 45) {
+      const newSize = next.crowdSize + 1;
       next.coins[i] = { ...coin, collected: true };
       next.coinsCollected += 1;
-      spawnParticles(next, cx, csy, '#FFD700', 8);
-      spawnParticles(next, cx, csy - 20, '#FFD700', 0, '+coin');
-      next.score += 100;
+      next.crowdSize = newSize;
+      next.characters = buildFormation(Math.min(next.crowdSize, GAME_CONFIG.MAX_VISIBLE_CHARACTERS), skin.colors);
+      spawnParticles(next, cx, csy, '#76FF03', 8);
+      spawnParticles(next, cx, csy - 20, '#76FF03', 0, '+1');
+      next.score += 40;
     }
   }
 

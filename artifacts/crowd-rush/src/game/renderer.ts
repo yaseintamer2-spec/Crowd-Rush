@@ -18,43 +18,53 @@ function drawCharacter(
   char: Character,
   time: number
 ) {
-  const bob = Math.sin(time * 10 + char.bobPhase) * 2.2;
+  const bob = Math.sin(time * 11 + char.bobPhase) * 2.2;
   const s = char.scale;
   const cy = y + bob;
-  const squash = 1 + Math.sin(time * 12 + char.runPhase) * 0.045;
+  const run = Math.sin(time * 13 + char.runPhase);
 
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.beginPath();
-  ctx.ellipse(x, cy + 18 * s, 10 * s, 4 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, cy + 20 * s, 13 * s, 4 * s, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = char.color;
-  ctx.beginPath();
-  ctx.ellipse(x, cy + 2 * s, 11 * s, 15 * s * squash, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = lighten(char.color, 42);
-  ctx.beginPath();
-  ctx.arc(x, cy - 14 * s, 7 * s, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Arms animation
-  const armSwing = Math.sin(time * 12 + char.runPhase + Math.PI) * 0.3;
-  ctx.strokeStyle = char.color;
-  ctx.lineWidth = 2 * s;
+  ctx.strokeStyle = darken(char.color, 24);
+  ctx.lineWidth = 3.4 * s;
   ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(x - 5 * s, cy - 5 * s);
-  ctx.lineTo(x - 8 * s + armSwing * 5, cy + 5 * s + armSwing * 3);
-  ctx.moveTo(x + 5 * s, cy - 5 * s);
-  ctx.lineTo(x + 8 * s - armSwing * 5, cy + 5 * s - armSwing * 3);
+  ctx.moveTo(x, cy - 6 * s);
+  ctx.lineTo(x, cy + 8 * s);
+  ctx.moveTo(x - 2 * s, cy - 2 * s);
+  ctx.lineTo(x - 12 * s - run * 4 * s, cy + 6 * s);
+  ctx.moveTo(x + 2 * s, cy - 2 * s);
+  ctx.lineTo(x + 12 * s + run * 4 * s, cy + 2 * s);
+  ctx.moveTo(x, cy + 8 * s);
+  ctx.lineTo(x - 9 * s - run * 5 * s, cy + 20 * s);
+  ctx.moveTo(x, cy + 8 * s);
+  ctx.lineTo(x + 9 * s + run * 5 * s, cy + 20 * s);
   ctx.stroke();
 
-  ctx.globalAlpha = 0.32;
-  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = 'rgba(255,255,255,0.38)';
+  ctx.lineWidth = 1.2 * s;
   ctx.beginPath();
-  ctx.arc(x - 3 * s, cy - 17 * s, 2.2 * s, 0, Math.PI * 2);
+  ctx.moveTo(x + 2 * s, cy - 4 * s);
+  ctx.lineTo(x + 2 * s, cy + 6 * s);
+  ctx.stroke();
+
+  ctx.fillStyle = lighten(char.color, 30);
+  ctx.strokeStyle = '#151515';
+  ctx.lineWidth = 1.8 * s;
+  ctx.beginPath();
+  ctx.arc(x, cy - 16 * s, 8 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(x - 3 * s, cy - 18 * s, 1.8 * s, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
@@ -116,6 +126,23 @@ function drawBackground(ctx: CanvasRenderingContext2D, width: number, height: nu
 
   ctx.fillStyle = isDark ? '#232445' : '#6f7f92';
   ctx.fillRect(pathLeft, HUD_HEIGHT, PATH_WIDTH, height);
+
+  const laneW = PATH_WIDTH / 3;
+  const lanes = [
+    { x: pathLeft, color: isDark ? 'rgba(255,84,84,0.18)' : 'rgba(255,82,82,0.16)', label: 'FIGHT' },
+    { x: pathLeft + laneW, color: isDark ? 'rgba(118,255,3,0.14)' : 'rgba(118,255,3,0.18)', label: '+1' },
+    { x: pathLeft + laneW * 2, color: isDark ? 'rgba(66,165,245,0.16)' : 'rgba(66,165,245,0.18)', label: 'GUN' },
+  ];
+  lanes.forEach((lane) => {
+    ctx.fillStyle = lane.color;
+    ctx.fillRect(lane.x, HUD_HEIGHT, laneW, height);
+    ctx.fillStyle = 'rgba(255,255,255,0.34)';
+    ctx.font = '900 11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    for (let y = HUD_HEIGHT + 36 - (scrollY % 160); y < height; y += 160) {
+      ctx.fillText(lane.label, lane.x + laneW / 2, y);
+    }
+  });
 
   const stripeOff = scrollY % 80;
   ctx.fillStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.18)';
@@ -237,21 +264,34 @@ function drawZombie(ctx: CanvasRenderingContext2D, zombie: Zombie, screenY: numb
 
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = zombie.hit ? '#7b7b7b' : '#4caf50';
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.beginPath();
-  ctx.arc(zx, screenY - 16, 10, 0, Math.PI * 2);
+  ctx.ellipse(zx, screenY + 26, 18, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = '#2e7d32';
-  ctx.lineWidth = 3;
+  ctx.fillStyle = zombie.hit ? '#7b7b7b' : '#76b852';
+  ctx.beginPath();
+  ctx.arc(zx, screenY - 18, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(zx - 4, screenY - 20, 1.5, 0, Math.PI * 2);
+  ctx.arc(zx + 4, screenY - 20, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = zombie.hit ? '#666' : '#2e7d32';
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(zx, screenY - 6);
   ctx.lineTo(zx, screenY + 12);
-  ctx.moveTo(zx - 8, screenY + 4);
-  ctx.lineTo(zx + 8, screenY + 4);
+  ctx.moveTo(zx - 3, screenY);
+  ctx.lineTo(zx - 16, screenY + 7);
+  ctx.moveTo(zx + 3, screenY);
+  ctx.lineTo(zx + 16, screenY - 1);
   ctx.stroke();
 
-  ctx.strokeStyle = '#2e7d32';
   ctx.beginPath();
   ctx.moveTo(zx - 8, screenY + 12);
   ctx.lineTo(zx + 8, screenY + 16);
@@ -271,11 +311,10 @@ function drawZombie(ctx: CanvasRenderingContext2D, zombie: Zombie, screenY: numb
 
 function drawBullet(ctx: CanvasRenderingContext2D, bullet: Bullet) {
   ctx.save();
-  ctx.fillStyle = '#ffea00';
+  ctx.fillStyle = '#fff59d';
   ctx.shadowColor = '#ffea00';
-  ctx.shadowBlur = 6;
-  ctx.beginPath();
-  ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
+  ctx.shadowBlur = 10;
+  roundRect(ctx, bullet.x - 3, bullet.y - 10, 6, 16, 3);
   ctx.fill();
   ctx.restore();
 }
@@ -286,16 +325,25 @@ function drawGunUpgrade(ctx: CanvasRenderingContext2D, upgrade: GunUpgrade, scre
   const bob = Math.sin(time * 4 + upgrade.bobPhase) * 4;
   ctx.save();
   ctx.translate(ux, screenY + bob);
+  ctx.fillStyle = '#0d47a1';
+  roundRect(ctx, -25, -18, 50, 36, 7);
+  ctx.fill();
   ctx.fillStyle = '#42A5F5';
-  roundRect(ctx, -16, -16, 32, 32, 8);
+  roundRect(ctx, -16, -6, 24, 12, 4);
+  ctx.fill();
+  ctx.fillStyle = '#90CAF9';
+  roundRect(ctx, 4, -10, 22, 6, 3);
+  ctx.fill();
+  ctx.fillStyle = '#0a244e';
+  roundRect(ctx, -6, 5, 7, 15, 2);
   ctx.fill();
   ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(-8, 0);
-  ctx.lineTo(8, 0);
-  ctx.moveTo(0, -8);
-  ctx.lineTo(0, 8);
+  ctx.moveTo(-21, -14);
+  ctx.lineTo(-11, -14);
+  ctx.moveTo(-16, -19);
+  ctx.lineTo(-16, -9);
   ctx.stroke();
   ctx.restore();
 }
@@ -310,10 +358,13 @@ function drawCoin(ctx: CanvasRenderingContext2D, coin: Coin, screenY: number, ca
 
   ctx.save();
   ctx.fillStyle = '#76FF03';
+  ctx.shadowColor = '#76FF03';
+  ctx.shadowBlur = 14;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.shadowBlur = 0;
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -322,6 +373,10 @@ function drawCoin(ctx: CanvasRenderingContext2D, coin: Coin, screenY: number, ca
   ctx.moveTo(cx - 6, cy);
   ctx.lineTo(cx + 6, cy);
   ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('1', cx, cy + 4);
   ctx.restore();
 }
 
@@ -552,6 +607,11 @@ export function renderHUD(
   ctx.font = 'bold 22px Inter, sans-serif';
   ctx.fillStyle = '#42A5F5';
   ctx.fillText(String(state.gunLevel), 120, 48);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = 'bold 9px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LEFT: FIGHT   CENTER: +1   RIGHT: UPGRADE', canvasWidth / 2, 66);
 
   // Score
   ctx.fillStyle = 'rgba(255,255,255,0.5)';

@@ -46,17 +46,17 @@ export function generateLevel(levelNum: number): LevelDef {
   const meta = getLevelMeta(n);
   const isTwist = meta.twist !== 'none';
 
-  // Progressive difficulty
-  let speed = Math.min(5.0, 2.5 + (n - 1) * 0.03);
+  // Longer, calmer stages: tension comes from choosing the right lane, not object spam.
+  let speed = Math.min(3.45, 1.9 + (n - 1) * 0.018);
   if (meta.twist === 'speedRush') speed *= 1.6;
   if (meta.twist === 'blitz') speed *= 1.8;
 
-  const length = Math.min(15000, 6000 + n * 200);
+  const length = Math.min(18000, 10000 + n * 260);
   const startCrowd = 5;
-  const requiredCrowd = 28 + Math.floor(n * 4.2);
+  const requiredCrowd = 18 + Math.floor(n * 2.4);
 
-  const gateCount = Math.min(18, 9 + Math.floor(n / 2));
-  let obstacleCount = Math.min(9, 3 + Math.floor(n / 2.3));
+  const gateCount = 0;
+  let obstacleCount = Math.min(4, 1 + Math.floor(n / 5));
   if (meta.twist === 'wallMaze') obstacleCount = Math.min(14, obstacleCount + 6);
 
   const label = isTwist
@@ -108,23 +108,23 @@ export function generateLevel(levelNum: number): LevelDef {
 
   // Coins
   const coins: Omit<Coin, 'id' | 'collected' | 'bobPhase'>[] = [];
-  const coinCount = Math.min(8, 3 + Math.floor(n / 3));
+  const coinCount = Math.min(42, 22 + Math.floor(n * 1.2));
 
   const coinSpacing = usableLength / (coinCount + 1);
   for (let i = 0; i < coinCount; i++) {
     coins.push({
       worldY: 400 + coinSpacing * (i + 1),
-      x: 0.78,
+      x: 0.5 + (rngFloat(n * 91 + i) - 0.5) * 0.08,
     });
   }
 
   const zombies: Omit<Zombie, 'id' | 'hit' | 'flashTimer'>[] = [];
-  const zombieCount = Math.min(6, 2 + Math.floor(n / 3));
-  const zombiePositions = [0.18, 0.28, 0.15, 0.35, 0.22, 0.32];
+  const zombieCount = Math.min(12, 4 + Math.floor(n / 2.4));
+  const zombiePositions = [0.16, 0.22, 0.28, 0.2, 0.31, 0.18];
   const zombieSpacing = usableLength / (zombieCount + 1);
   for (let i = 0; i < zombieCount; i++) {
     const worldY = 600 + zombieSpacing * (i + 1);
-    const health = 2 + Math.floor(n / 4);
+    const health = 2 + Math.floor(n / 5) + (i % 3);
     zombies.push({
       worldY,
       x: zombiePositions[i % zombiePositions.length],
@@ -134,12 +134,12 @@ export function generateLevel(levelNum: number): LevelDef {
   }
 
   const gunUpgrades: Omit<GunUpgrade, 'id' | 'collected' | 'bobPhase'>[] = [];
-  const upgradeCount = Math.min(3, 1 + Math.floor(n / 8));
+  const upgradeCount = Math.min(5, 2 + Math.floor(n / 6));
   const upgradeSpacing = usableLength / (upgradeCount + 1);
   for (let i = 0; i < upgradeCount; i++) {
     gunUpgrades.push({
       worldY: 500 + upgradeSpacing * (i + 1),
-      x: 0.82 - (i % 2) * 0.12,
+      x: 0.8 + (i % 2) * 0.04,
     });
   }
 
