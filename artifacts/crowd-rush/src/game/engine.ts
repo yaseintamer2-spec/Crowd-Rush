@@ -150,7 +150,7 @@ function spawnParticles(
 function applyCountChange(state: GameState, newSize: number, x: number, y: number) {
   const diff = newSize - state.crowdSize;
   const color = diff >= 0 ? '#76FF03' : '#FF5252';
-  const text = diff >= 0 ? `+${diff}` : `${diff}`;
+  const text = diff >= 0 ? `RECRUIT ${diff}` : `LOSS ${Math.abs(diff)}`;
   spawnParticles(state, x, y, color, 0, text);
   state.showCountChange = { value: diff, timer: 60 };
 }
@@ -273,7 +273,7 @@ export function updateGame(
       next.gunUpgrades[i] = { ...upgrade, collected: true };
       next.gunLevel = Math.min(5, next.gunLevel + 1);
       next.score += 150;
-      spawnParticles(next, ux, usy, '#42A5F5', 10, 'GUN +1');
+      spawnParticles(next, ux, usy, '#42A5F5', 10, 'WEAPON UP');
     }
   }
 
@@ -327,7 +327,7 @@ export function updateGame(
       next.crowdSize = newSize;
       next.characters = buildFormation(Math.min(next.crowdSize, GAME_CONFIG.MAX_VISIBLE_CHARACTERS), skin.colors);
       spawnParticles(next, cx, csy, '#76FF03', 8);
-      spawnParticles(next, cx, csy - 20, '#76FF03', 0, '+1');
+      spawnParticles(next, cx, csy - 20, '#76FF03', 0, 'JOINED');
       next.score += 40;
     }
   }

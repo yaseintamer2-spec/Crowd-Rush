@@ -123,7 +123,7 @@ export function GameScreen({ game, onHome, addCoins, coins, spendCoins }: Props)
             border: '1px solid rgba(255,215,0,0.2)', pointerEvents: 'none',
           }}>
             <span style={{ fontSize: 13 }}>💰</span>
-            <span style={{ color: '#FFD700', fontWeight: 800, fontSize: 13 }}>+{state.coinsCollected}</span>
+            <span style={{ color: '#FFD700', fontWeight: 800, fontSize: 13 }}>{state.coinsCollected}</span>
           </div>
         )}
 
@@ -174,7 +174,9 @@ export function GameScreen({ game, onHome, addCoins, coins, spendCoins }: Props)
             textShadow: `0 0 14px ${state.showCountChange.value >= 0 ? '#76FF03' : '#FF5252'}`,
             pointerEvents: 'none', animation: 'floatUp 0.8s ease forwards',
           }}>
-            {state.showCountChange.value >= 0 ? '+' : ''}{state.showCountChange.value}
+            {state.showCountChange.value >= 0
+              ? `RECRUIT ${state.showCountChange.value}`
+              : `LOSS ${Math.abs(state.showCountChange.value)}`}
           </div>
         )}
       </div>
